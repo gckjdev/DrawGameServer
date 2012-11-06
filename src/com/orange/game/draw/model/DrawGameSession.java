@@ -25,16 +25,20 @@ public class DrawGameSession extends GameSession {
 	}
 	
 	
-
+	public boolean isDrawGameSession(){
+		// this is just for compatibility for online draw app
+		return true;
+	}
+	
 //	public void resetGame(){
 //		super.resetGame();
 //	}
 	
-	@Override	
-	public void restartGame(){	
-		clearTimer();
-		decreaseTimeForNextPlayUser = false;
-	}
+//	@Override	
+//	public void restartGame(){	
+//		clearTimer();
+//		decreaseTimeForNextPlayUser = false;
+//	}
 	
 	public void setCurrentPlayUser(int index) {
 		gameSessionUserList.selectCurrentPlayUser(index);
@@ -48,14 +52,14 @@ public class DrawGameSession extends GameSession {
 		return decreaseTimeForNextPlayUser;
 	}
 	
-	private int getDiceCallCeiling() {
-		
-		int ruleType = getRuleType();
-		int playUserCount = getPlayUserCount();
-		
-		return playUserCount * (ruleType == DiceGameRuleType.RULE_NORMAL_VALUE ? 5 :7);
-		
-	}
+//	private int getDiceCallCeiling() {
+//		
+//		int ruleType = getRuleType();
+//		int playUserCount = getPlayUserCount();
+//		
+//		return playUserCount * (ruleType == DiceGameRuleType.RULE_NORMAL_VALUE ? 5 :7);
+//		
+//	}
 	
 	enum SessionStatus{
 		INIT,
@@ -72,33 +76,34 @@ public class DrawGameSession extends GameSession {
 //		return (status == SessionStatus.PLAYING);
 //	}
 
-	public void startGame(){
-		status = SessionStatus.PLAYING;
-		ServerLog.info(sessionId, "start game, set status to " + status);
-	}
+//	public void startGame(){
+//		super.startGame();
+////		status = SessionStatus.PLAYING;
+////		ServerLog.info(sessionId, "start game, set status to " + status);
+//	}
 	
-	public void finishGame(){
-		status = SessionStatus.WAIT;
-		clearTimer();
-//		clearStartExpireTimer();
-		ServerLog.info(sessionId, "finish game, set status to " + status);
-	}
+//	public void finishGame(){
+//		status = SessionStatus.WAIT;
+//		clearTimer();
+////		clearStartExpireTimer();
+//		ServerLog.info(sessionId, "finish game, set status to " + status);
+//	}
 	
-	public void resetGame() {
-		super.resetGame();
-		status = SessionStatus.INIT;
-		clearTimer();
-//		this.resetExpireTimer();
-//		clearStartExpireTimer();
-		ServerLog.info(sessionId, "reset game, set status to " + status);
-	}
+//	public void resetGame() {
+//		super.resetGame();
+//		status = SessionStatus.INIT;
+//		clearTimer();
+////		this.resetExpireTimer();
+////		clearStartExpireTimer();
+//		ServerLog.info(sessionId, "reset game, set status to " + status);
+//	}
 
-	public void waitForPlay() {
-		status = SessionStatus.WAIT;
-		clearTimer();
-//		this.resetExpireTimer();
-		ServerLog.info(sessionId, "wait for play, set status to " + status);
-	}
+//	public void waitForPlay() {
+//		status = SessionStatus.WAIT;
+//		clearTimer();
+////		this.resetExpireTimer();
+//		ServerLog.info(sessionId, "wait for play, set status to " + status);
+//	}
 	
 	public synchronized void startNewTurn(String word, int level, int language){
 		if (currentTurn == null){
