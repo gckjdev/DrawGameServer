@@ -119,10 +119,35 @@ public class DrawRobotClient extends AbstractRobotClient {
 	@Override
 	public void handleMessage(GameMessage message){
 		
-		switch (message.getCommand()){					
-		default:
+		switch (message.getCommand()){
+		
+//		case JOIN_GAME_RESPONSE:
+//			handleJoinGameResponse(message);
+//			break;
+						
+		case START_GAME_RESPONSE:
 			break;
-		}
+			
+		case NEW_DRAW_DATA_NOTIFICATION_REQUEST:
+			handleDrawDataNotification(message);
+			break;
+			
+		case GAME_TURN_COMPLETE_NOTIFICATION_REQUEST:			
+			handleGameTurnCompleteNotification(message);
+			break;
+			
+		case GAME_START_NOTIFICATION_REQUEST:
+			handleGameStartNotification(message);
+			break;
+
+		case USER_JOIN_NOTIFICATION_REQUEST:			
+			handleUserJoinNotification(message);
+			break;
+			
+		case USER_QUIT_NOTIFICATION_REQUEST:
+			handleUserQuitNotification(message);
+			break;
+		}	
 	}
 
 	private void scheduleSendCallDice(final int[] whatToCall) {
@@ -579,14 +604,12 @@ public class DrawRobotClient extends AbstractRobotClient {
 
 	Timer startGameTimer = null;
 	Timer startDrawTimer = null;
-	int sendDrawIndex = 0;
+	volatile int sendDrawIndex = 0;
 	private static final int START_TIMER_WAITING_INTERVAL = 10;
 	private static final int START_DRAW_WAITING_INTERVAL = 1;
 	public static int RANDOM_GUESS_WORD_INTERVAL = 20;	
 	
 	public void clearStartDrawTimer(){
-		sendDrawIndex = 0;
-
 		if (startDrawTimer != null){
 			startDrawTimer.cancel();
 			startDrawTimer = null;
@@ -663,8 +686,10 @@ public class DrawRobotClient extends AbstractRobotClient {
 					sendStartGame();
 					sendStartDraw(word, level, language);				
 	
-					state = ClientState.PLAYING;				
-					scheduleSendDrawDataTimer(pbDraw);	
+					state = ClientState.PLAYING;		
+					long FIRST_DELAY = 10;	// 10 ms
+					sendDrawIndex = 0;
+					scheduleSendDrawDataTimer(pbDraw, FIRST_DELAY);	
 				}
 				catch(Exception e){
 					ServerLog.error(sessionId, e);					
@@ -677,7 +702,11 @@ public class DrawRobotClient extends AbstractRobotClient {
 		
 	}
 	
-	private void scheduleSendDrawDataTimer(final PBDraw pbDraw) {
+	private long getSendDrawInterval(long currentDataLen){
+		return currentDataLen*10;
+	}	
+	
+	private void scheduleSendDrawDataTimer(final PBDraw pbDraw, long delay) {
 		if (state != ClientState.PLAYING){
 			return;
 		}
@@ -685,10 +714,7 @@ public class DrawRobotClient extends AbstractRobotClient {
 		if (!this.currentPlayUserId.equals(this.userId)){
 			return;
 		}
-		
-		// clear previous draw timer if exists
-		clearStartDrawTimer();
-		
+				
 		startDrawTimer = new Timer();
 		startDrawTimer.schedule(new TimerTask(){
 
@@ -700,21 +726,28 @@ public class DrawRobotClient extends AbstractRobotClient {
 						clearStartDrawTimer();
 						return;
 					}
-					
-					PBDrawAction drawData = pbDraw.getDrawData(sendDrawIndex);
-					if (drawData.getType() == DrawAction.DRAW_ACTION_TYPE_CLEAN)
-						cleanDraw();
-					else
-						sendDraw(drawData.getPointsList(), drawData.getWidth(), drawData.getColor());
-					
-					sendDrawIndex++;
+					else{					
+						PBDrawAction drawData = pbDraw.getDrawData(sendDrawIndex);
+						
+						if (drawData.getType() == DrawAction.DRAW_ACTION_TYPE_CLEAN)
+							cleanDraw();
+						else
+							sendDraw(drawData.getPointsList(), drawData.getWidth(), drawData.getColor());
+						
+						sendDrawIndex++;
+						
+						// schedule next one
+						clearStartDrawTimer();
+						long nextDelay = getSendDrawInterval(drawData.getPointsCount());
+						scheduleSendDrawDataTimer(pbDraw, nextDelay);
+					}
 				}
 				catch(Exception e){
 					ServerLog.error(sessionId, e);					
 				}
 			}
 			
-		}, START_DRAW_WAITING_INTERVAL*1000+1000, START_DRAW_WAITING_INTERVAL*1000+1000);
+		}, delay); //START_DRAW_WAITING_INTERVAL*1000+1000, START_DRAW_WAITING_INTERVAL*1000+1000);
 	}
 	
 }
