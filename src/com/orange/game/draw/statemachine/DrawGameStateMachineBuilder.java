@@ -36,7 +36,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 //	public static final int WAIT_USER_BET_TIMEOUT = 7;
 	
 	static final int PICK_WORD_TIMEOUT = 60;
-	static final int START_GAME_TIMEOUT = 36;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
+	static final int START_GAME_TIMEOUT = 5;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
 	static final int USER_WAIT_TIMEOUT = 60*30;		// 30 minutes
 	static final int DRAW_GUESS_TIMEOUT = 60;
 	
@@ -50,6 +50,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 		Action completeGame = new DrawGameAction.CompleteGame();
 //		Action selectPlayUser = new DrawGameAction.selectPlayUser();
 		Action selectPlayUser = new CommonGameAction.SelectPlayUser();		
+//		Action selectDrawUser = new DrawGameAction.SelectDrawUser();
 		Action kickDrawUser = new DrawGameAction.KickDrawUser();
 		Action playGame = new DrawGameAction.PlayGame();
 		Action prepareRobot = new DrawGameAction.PrepareRobot();
@@ -64,19 +65,22 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 		Action clearRobotTimer = new DrawGameAction.ClearRobotTimer();
 		
 		Action broadcastDrawUserChange = new DrawGameAction.BroadcastDrawUserChange();
-		Action clearAllUserPlaying = new CommonGameAction.ClearAllUserPlaying();		
+//		Action clearAllUserPlaying = new CommonGameAction.ClearAllUserPlaying();		
 		Action setAllUserPlaying = new CommonGameAction.SetAllUserPlaying();		
+		
+		Action fireStartGame = new DrawGameAction.FireStartGame();
 
 		Condition checkUserCount = new CommonGameCondition.CheckUserCount();
 		
 		sm.addState(INIT_STATE)		
 			.addAction(initGame)
 			.addAction(clearTimer)
-			.addEmptyTransition(GameCommandType.LOCAL_DRAW_USER_QUIT)			
+			.addEmptyTransition(GameCommandType.LOCAL_PLAY_USER_QUIT)			
 			.addEmptyTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT)			
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)			
 			.addEmptyTransition(GameCommandType.LOCAL_TIME_OUT)			
 			.addTransition(GameCommandType.LOCAL_NEW_USER_JOIN, GameStateKey.CHECK_USER_COUNT)
+			.addAction(setAllUserPlaying)
 			.addAction(selectPlayUser)
 			.addAction(broadcastDrawUserChange);
 		
@@ -101,7 +105,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 			.addAction(setOneUserWaitTimer)
 			.addAction(prepareRobot)
 			.addTransition(GameCommandType.LOCAL_NEW_USER_JOIN, GameStateKey.CHECK_USER_COUNT)
-			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.CREATE)
+			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.CREATE)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.CREATE)	
 			.addTransition(GameCommandType.LOCAL_OTHER_USER_QUIT, GameStateKey.CREATE)
 			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
@@ -112,19 +116,19 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 //			.addAction(setAllUserPlaying)
 			.addAction(setStartGameTimer)
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
-//			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
+//			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.CHECK_USER_COUNT)	
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
 			.addEmptyTransition(GameCommandType.LOCAL_NEW_USER_JOIN)
-			.addTransition(GameCommandType.LOCAL_START_GAME, GameStateKey.WAIT_PICK_WORD)
-			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
+			.addTransition(GameCommandType.LOCAL_START_GAME, GameStateKey.FIRE_START_GAME)
+			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.FIRE_START_GAME)	
 			.addTransition(GameCommandType.LOCAL_DRAW_USER_CHAT, GameStateKey.WAIT_FOR_START_GAME)	
 			.addAction(clearTimer);
 				
 		sm.addState(new GameState(GameStateKey.DRAW_USER_QUIT))	
-			.addAction(setAllUserPlaying)
+//			.addAction(setAllUserPlaying)
 			.addAction(selectPlayUser)
-			.addAction(clearAllUserPlaying)
+//			.addAction(clearAllUserPlaying)
 			.addAction(broadcastDrawUserChange)			
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
@@ -134,6 +138,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 			});	
 		
 		sm.addState(new GameState(GameStateKey.KICK_DRAW_USER))
+//			.addAction(setAllUserPlaying)
 			.addAction(kickDrawUser)
 			.addAction(selectPlayUser)
 			.addAction(broadcastDrawUserChange)
@@ -144,22 +149,23 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 				}
 			});
 		
-//		sm.addState(new GameState(GameStateKey.DRAW_USER_QUIT))
-//			.addAction(startGame)
-//			.addAction(setWaitPickWordTimer)
-//			.addTransition(GameCommandType.LOCAL_WORD_PICKED, GameStateKey.DRAW_GUESS)
-//			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.COMPLETE_GAME)
-//			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
-//			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
-//			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
-//			.addAction(clearTimer);
+		sm.addState(new GameState(GameStateKey.FIRE_START_GAME))
+//			.addAction(setAllUserPlaying)
+			.addAction(fireStartGame)
+			.setDecisionPoint(new DecisionPoint(null){
+				@Override
+				public Object decideNextState(Object context){
+					return GameStateKey.WAIT_PICK_WORD;	// goto check user count state directly
+				}
+			});
 		
 		sm.addState(new GameState(GameStateKey.WAIT_PICK_WORD))
 			.addAction(startGame)
 //			.addAction(broadcastDrawGameStart)
 			.addAction(setWaitPickWordTimer)
+			.addTransition(GameCommandType.LOCAL_START_GAME, GameStateKey.FIRE_START_GAME)
 			.addTransition(GameCommandType.LOCAL_WORD_PICKED, GameStateKey.DRAW_GUESS)
-			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.COMPLETE_GAME)
+			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.COMPLETE_GAME)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
 			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
@@ -168,7 +174,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 		sm.addState(new GameState(GameStateKey.DRAW_GUESS))
 			.addAction(setDrawGuessTimer)
 			.addAction(playGame)		
-			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.COMPLETE_GAME)
+			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.COMPLETE_GAME)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
 			.addTransition(GameCommandType.LOCAL_ALL_USER_GUESS, GameStateKey.COMPLETE_GAME)
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
@@ -180,7 +186,6 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 			.addAction(calculateDrawUserCoins)
 			.addAction(selectPlayUser)
 			.addAction(completeGame)
-			.addAction(clearAllUserPlaying)
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
 				public Object decideNextState(Object context){

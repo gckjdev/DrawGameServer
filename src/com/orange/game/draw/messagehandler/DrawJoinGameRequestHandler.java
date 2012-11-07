@@ -148,7 +148,10 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		}
 		
 		// add user into session
-		GameUser user = SessionUserService.getInstance().addUserIntoSession(session, pbUser, channel, request);		
+		GameUser user = SessionUserService.getInstance().addUserIntoSession(session, pbUser, channel, request);
+		
+		// for draw guess game, all user is in playing state by default
+		user.setPlaying(true);
 		
 		// send response
 		sendResponseForUserJoin(session, user.getPBUser(), channel, request);
@@ -238,6 +241,9 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		
 		JoinGameResponse response;
 				
+		// TODO how to adapt to new version?
+		builder.getGameSessionBuilder().setName(Integer.toString(session.getSessionId()));
+		
 		if (session.isGamePlaying()) {
 			//TODO : to be completed
 			response = builder.build();

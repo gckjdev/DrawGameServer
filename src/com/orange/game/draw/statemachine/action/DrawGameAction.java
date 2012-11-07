@@ -7,8 +7,10 @@ import com.orange.common.statemachine.Action;
 import com.orange.game.draw.model.DrawGameSession;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
+import com.orange.game.traffic.model.manager.GameUserManager;
 import com.orange.game.traffic.robot.client.RobotService;
 import com.orange.game.traffic.server.GameEventExecutor;
+import com.orange.game.traffic.server.HandlerUtils;
 import com.orange.game.traffic.server.NotificationUtils;
 import com.orange.game.traffic.service.SessionUserService;
 import com.orange.game.traffic.service.UserGameResultService;
@@ -24,6 +26,70 @@ import com.orange.network.game.protocol.model.DiceProtos.PBDiceFinalCount;
 import com.orange.network.game.protocol.model.DiceProtos.PBDiceGameResult;
 
 public class DrawGameAction{
+
+	public static class FireStartGame implements Action {
+
+			public static void fireGameStartNotification(GameSession gameSession) {
+			
+				List<GameUser> list = gameSession.getUserList().getAllUsers();
+				String currentPlayUserId = gameSession.getCurrentPlayUserId();
+				if (currentPlayUserId == null){
+					ServerLog.warn(gameSession.getSessionId(), "<fireGameStartNotification> but current play user null");
+					return;
+				}
+				
+				for (GameUser user : list){		
+				
+				if (!user.isPlaying()){
+					ServerLog.info(gameSession.getSessionId(), "send START game notificaiton but user "+
+							user.getNickName()+" not in play state");
+					continue;
+				}
+				
+				if (currentPlayUserId.equals(user.getUserId())){
+					// send start game response
+					GameMessageProtos.StartGameResponse gameResponse = GameMessageProtos.StartGameResponse.newBuilder()
+						.setCurrentPlayUserId(currentPlayUserId)
+						.setNextPlayUserId("")
+						.build();
+					GameMessageProtos.GameMessage response = GameMessageProtos.GameMessage.newBuilder()
+						.setCommand(GameCommandType.START_GAME_RESPONSE)
+						.setMessageId(GameEventExecutor.getInstance().generateMessageId())
+						.setResultCode(GameResultCode.SUCCESS)
+						.setStartGameResponse(gameResponse)
+						.build();
+					HandlerUtils.sendMessage(response, user.getChannel());
+	
+				}
+				else{
+					// send notification for the user
+					GameMessageProtos.GeneralNotification notification = GameMessageProtos.GeneralNotification.newBuilder()		
+						.setCurrentPlayUserId(gameSession.getCurrentPlayUserId())
+						.setNextPlayUserId("")
+						.build();
+					
+					GameMessageProtos.GameMessage message = GameMessageProtos.GameMessage.newBuilder()
+						.setCommand(GameCommandType.GAME_START_NOTIFICATION_REQUEST)
+						.setMessageId(GameEventExecutor.getInstance().generateMessageId())
+						.setNotification(notification)
+						.setSessionId(gameSession.getSessionId())
+						.setUserId(user.getUserId())
+						.setToUserId(user.getUserId())				
+						.build();
+					
+					HandlerUtils.sendMessage(message, user.getChannel());
+					
+				}
+			}
+		}
+		
+		
+		@Override
+		public void execute(Object context) {			
+			DrawGameSession session = (DrawGameSession)context;		
+			fireGameStartNotification(session);	
+		}
+	}
 
 	public enum DrawTimerType {
 		START,
@@ -110,18 +176,40 @@ public class DrawGameAction{
 
 	public static class CompleteGame implements Action {
 
+		public static void broadcastDrawGameCompleteNotification(DrawGameSession session) {
+
+			int onlineUserCount = GameUserManager.getInstance().getOnlineUserCount();
+			List<GameUser> list = session.getUserList().getAllUsers();			
+			for (GameUser user : list){						
+				GameMessageProtos.GeneralNotification notification;			
+				notification = GameMessageProtos.GeneralNotification.newBuilder()		
+					.setCurrentPlayUserId(session.getCurrentPlayUserId())
+					.setTurnGainCoins(session.getCurrentUserGainCoins(user.getUserId()))
+					.build();				
+				
+				// send notification for the user			
+				GameMessageProtos.GameMessage message = GameMessageProtos.GameMessage.newBuilder()
+					.setCommand(GameCommandType.GAME_TURN_COMPLETE_NOTIFICATION_REQUEST)
+					.setMessageId(GameEventExecutor.getInstance().generateMessageId())
+					.setSessionId(session.getSessionId())
+					.setUserId(user.getUserId())
+					.setToUserId(user.getUserId())
+					.setCompleteReason(session.getCompleteReason())
+					.setNotification(notification)			
+					.setRound(session.getCurrentRound())
+					.setOnlineUserCount(onlineUserCount)
+					.build();
+				
+				HandlerUtils.sendMessage(message, user.getChannel());
+			}
+		}		
+		
 		@Override
 		public void execute(Object context) {
-			/* TODO
-			GameSession session = (GameSession)context;
-			sessionUserManager.clearUserPlaying(session);
-			session.completeTurn();			
-			GameNotification.broadcastNotification(session, null, GameCommandType.GAME_TURN_COMPLETE_NOTIFICATION_REQUEST);
-
-			sessionManager.adjustSessionSetForTurnComplete(session);
-			*/			
+			DrawGameSession session = (DrawGameSession)context;
+			session.completeTurn();	
+			broadcastDrawGameCompleteNotification(session);
 		}
-
 	}	
 
 	public static class KickDrawUser implements Action {
@@ -219,7 +307,10 @@ public class DrawGameAction{
 		public void execute(Object context) {
 			GameSession session = (GameSession)context;
 //			GameSessionManager.getInstance().selectCurrentPlayer(session);
+			
+//			session.getUserList().setAllUserPlaying();
 			session.selectPlayerUser();
+//			session.getUserList().clearAllUserPlaying();
 		}
 
 	}
