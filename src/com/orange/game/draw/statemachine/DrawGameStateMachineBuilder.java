@@ -65,6 +65,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 		
 		Action broadcastDrawUserChange = new DrawGameAction.BroadcastDrawUserChange();
 		Action clearAllUserPlaying = new CommonGameAction.ClearAllUserPlaying();		
+		Action setAllUserPlaying = new CommonGameAction.SetAllUserPlaying();		
 
 		Condition checkUserCount = new CommonGameCondition.CheckUserCount();
 		
@@ -108,6 +109,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 			.addAction(clearRobotTimer);
 		
 		sm.addState(new GameState(GameStateKey.WAIT_FOR_START_GAME))
+//			.addAction(setAllUserPlaying)
 			.addAction(setStartGameTimer)
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
 //			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
@@ -118,9 +120,11 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
 			.addTransition(GameCommandType.LOCAL_DRAW_USER_CHAT, GameStateKey.WAIT_FOR_START_GAME)	
 			.addAction(clearTimer);
-		
+				
 		sm.addState(new GameState(GameStateKey.DRAW_USER_QUIT))	
+			.addAction(setAllUserPlaying)
 			.addAction(selectPlayUser)
+			.addAction(clearAllUserPlaying)
 			.addAction(broadcastDrawUserChange)			
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
@@ -140,8 +144,19 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 				}
 			});
 		
+//		sm.addState(new GameState(GameStateKey.DRAW_USER_QUIT))
+//			.addAction(startGame)
+//			.addAction(setWaitPickWordTimer)
+//			.addTransition(GameCommandType.LOCAL_WORD_PICKED, GameStateKey.DRAW_GUESS)
+//			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.COMPLETE_GAME)
+//			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
+//			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
+//			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
+//			.addAction(clearTimer);
+		
 		sm.addState(new GameState(GameStateKey.WAIT_PICK_WORD))
 			.addAction(startGame)
+//			.addAction(broadcastDrawGameStart)
 			.addAction(setWaitPickWordTimer)
 			.addTransition(GameCommandType.LOCAL_WORD_PICKED, GameStateKey.DRAW_GUESS)
 			.addTransition(GameCommandType.LOCAL_DRAW_USER_QUIT, GameStateKey.COMPLETE_GAME)

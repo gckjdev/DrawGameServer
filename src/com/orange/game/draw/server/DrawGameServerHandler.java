@@ -3,7 +3,11 @@ package com.orange.game.draw.server;
 import org.jboss.netty.channel.MessageEvent;
 
 import com.orange.common.log.ServerLog;
+import com.orange.game.draw.messagehandler.CleanDrawRequestHandler;
+import com.orange.game.draw.messagehandler.DrawChatRequestHandler;
+import com.orange.game.draw.messagehandler.DrawDataRequestHandler;
 import com.orange.game.draw.messagehandler.DrawJoinGameRequestHandler;
+import com.orange.game.draw.messagehandler.StartGameRequestHandler;
 import com.orange.game.traffic.messagehandler.AbstractMessageHandler;
 import com.orange.game.traffic.messagehandler.ChatRequestHandler;
 import com.orange.game.traffic.messagehandler.room.CreateRoomRequestHandler;
@@ -29,6 +33,16 @@ public class DrawGameServerHandler extends GameServerHandler {
 		GameMessage message = (GameMessage)messageEvent.getMessage();
 		
 		switch (message.getCommand()){
+		
+			case SEND_DRAW_DATA_REQUEST:
+				return new DrawDataRequestHandler(messageEvent);
+
+			case CLEAN_DRAW_REQUEST:
+				return new CleanDrawRequestHandler(messageEvent);
+		
+			case START_GAME_REQUEST:
+				return new StartGameRequestHandler(messageEvent);
+		
 			case CREATE_ROOM_REQUEST:
 				return new CreateRoomRequestHandler(messageEvent);
 				
@@ -36,7 +50,7 @@ public class DrawGameServerHandler extends GameServerHandler {
 				return new GetRoomRequestHandler(messageEvent);
 				
 			case CHAT_REQUEST:
-				return new ChatRequestHandler(messageEvent);
+				return new DrawChatRequestHandler(messageEvent);
 
 			case JOIN_GAME_REQUEST:
 				return new DrawJoinGameRequestHandler(messageEvent);

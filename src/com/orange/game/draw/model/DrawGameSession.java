@@ -1,5 +1,6 @@
 package com.orange.game.draw.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import com.orange.common.log.ServerLog;
 import com.orange.game.draw.statemachine.DrawGameStateMachineBuilder;
@@ -261,7 +262,7 @@ public class DrawGameSession extends GameSession {
 	}
 	*/
 
-	public boolean isAllUserGuessWord(List<String> userIdList) {
+	private boolean isAllUserGuessWord(List<String> userIdList) {
 		if (currentTurn == null){
 			ServerLog.warn(sessionId, "call isAllUserGuessWord but current turn is null?");
 			return false;
@@ -408,4 +409,16 @@ public class DrawGameSession extends GameSession {
 //	public void setTimer(ScheduledFuture<Object> future) {
 //		this.commonTimerFuture = future;
 //	}	
+	
+	public boolean isAllUserGuessWord(){
+		List<String> userIdList = new ArrayList<String>();
+		List<GameUser> userList = getUserList().getPlayingUserList();
+		for (GameUser user : userList){
+			if (user.isPlaying() && user != this.getCurrentPlayUser()){
+				userIdList.add(user.getUserId());
+			}
+		}
+		
+		return this.isAllUserGuessWord(userIdList);
+	}
 }
