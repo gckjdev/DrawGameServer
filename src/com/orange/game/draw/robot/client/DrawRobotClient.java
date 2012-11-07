@@ -1,29 +1,46 @@
 package com.orange.game.draw.robot.client;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.math.RandomUtils;
 import org.apache.log4j.Logger;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.orange.common.log.ServerLog;
 import com.orange.common.mongodb.MongoDBClient;
+import com.orange.common.utils.RandomUtil;
 import com.orange.game.constants.DBConstants;
 import com.orange.game.constants.ServiceConstant;
+import com.orange.game.draw.model.DrawAction;
+import com.orange.game.draw.model.WordManager;
+import com.orange.game.draw.server.DrawOnlineServer;
+import com.orange.game.draw.service.DrawStorageService;
 import com.orange.game.model.dao.Item;
 import com.orange.game.model.dao.User;
 import com.orange.game.model.manager.UserManager;
 import com.orange.game.traffic.robot.client.AbstractRobotClient;
+import com.orange.game.traffic.robot.client.AbstractRobotManager;
 import com.orange.game.traffic.server.GameEventExecutor;
 import com.orange.network.game.protocol.constants.GameConstantsProtos.GameCommandType;
+import com.orange.network.game.protocol.constants.GameConstantsProtos.GameResultCode;
 import com.orange.network.game.protocol.message.GameMessageProtos.CallDiceRequest;
 import com.orange.network.game.protocol.message.GameMessageProtos.GameChatRequest;
 import com.orange.network.game.protocol.message.GameMessageProtos.GameMessage;
+import com.orange.network.game.protocol.message.GameMessageProtos.GeneralNotification;
 import com.orange.network.game.protocol.message.GameMessageProtos.OpenDiceRequest;
+import com.orange.network.game.protocol.message.GameMessageProtos.SendDrawDataRequest;
 import com.orange.network.game.protocol.model.DiceProtos.PBDice;
 import com.orange.network.game.protocol.model.DiceProtos.PBUserDice;
+import com.orange.network.game.protocol.model.DrawProtos.PBDraw;
+import com.orange.network.game.protocol.model.GameBasicProtos.PBDrawAction;
 import com.orange.network.game.protocol.model.GameBasicProtos.PBGameUser;
 import com.orange.network.game.protocol.model.GameBasicProtos.PBKeyValue;
 import com.orange.network.game.protocol.model.GameBasicProtos.PBGameUser.Builder;
@@ -74,6 +91,16 @@ public class DrawRobotClient extends AbstractRobotClient {
 	DrawRobotIntelligence diceRobotIntelligence = new DrawRobotIntelligence(ruleType);
 	DrawRobotChatContent diceRobotChatContent = DrawRobotChatContent.getInstance();
 	
+	int round = -1;
+	String word = null;
+	int level = 0;
+	int language = 0;
+	int guessCount = 0;
+	boolean guessCorrect = false;
+	
+	// simulation
+	Timer guessWordTimer;
+	PBDraw pbDraw;
 	
 	public DrawRobotClient(User user, int sessionId, int index) {
 		super(user, sessionId,index);
@@ -83,117 +110,16 @@ public class DrawRobotClient extends AbstractRobotClient {
 		dbclient = new MongoDBClient(DBConstants.D_GAME);
 	}
 	
+	// for draw game compatibility
+	@Override
+	protected boolean isForDrawGame(){
+		return true;
+	}
+	
 	@Override
 	public void handleMessage(GameMessage message){
 		
-		switch (message.getCommand()){
-		
-		case ROLL_DICE_BEGIN_NOTIFICATION_REQUEST:
-			ServerLog.info(sessionId, "Robot "+nickName+" receive ROLL_DICE_BEGIN_NOTIFICATION_REQUEST");
-			// Balance and reset data of current game
-			if ( !firstRound ) {
-				diceRobotIntelligence.balanceAndReset(userList.size(), robotWinThisGame);
-			}
-			break;
-		
-		case ROLL_DICE_END_NOTIFICATION_REQUEST:			
-			ServerLog.info(sessionId, "Robot "+nickName+" receive ROLL_DICE_END_NOTIFICATION_REQUEST");
-			if ( (pbUserDiceList = message.getRollDiceEndNotificationRequest().getUserDiceList() ) == null ) 
-					throw new NullPointerException() ;
-			else {
-				for ( PBUserDice userDice : pbUserDiceList ) {
-					if ( userDice.getUserId() != null && userDice.getUserId().equals(userId)) {
-						pbDiceList = userDice.getDicesList();
-						break;
-					}
-				}
-				for ( int i = 0 ; i < 5; i++ ) {
-					robotRollResult[i] = pbDiceList.get(i).getDice();
-				}
-			}
-			diceRobotIntelligence.introspectRobotDices(robotRollResult);
-			break;
-			
-		case NEXT_PLAYER_START_NOTIFICATION_REQUEST:
-			ServerLog.info(sessionId, "Robot "+nickName+" receive NEXT_PLAYER_START_NOTIFICATION_REQUEST");
-			if (message.getCurrentPlayUserId().equals(userId)){
-				
-				if ( this.sessionRealUserCount() == 0 || canOpenDice ){
-					int multiple = 1;
-					ServerLog.info(sessionId, "[NEXT_PLAYER_START_NOTIFICATION_REQUEST] robot dicides to open.");
-					if ( diceRobotIntelligence.hasSetChat()) {
-						sendChat(diceRobotIntelligence.getChatContent());
-						diceRobotIntelligence.resetHasSetChat();
-					}
-					if (diceRobotIntelligence.getCanCut()) { 
-						multiple = 2;
-					}
-					scheduleSendOpenDice(0, multiple);
-				}
-				else {
-					// Make a decision what to call.
-					playerCount = userList.size();
-					diceRobotIntelligence.decideWhatToCall(nickName, playerCount, callDiceNum, callDice, callDiceIsWild);
-					// Check the decision.
-					if (diceRobotIntelligence.giveUpCall()) {
-						ServerLog.info(sessionId, "[NEXT_PLAYER_START_NOTIFICATION_REQUEST] robot gives up call ,just open.");
-						if ( diceRobotIntelligence.hasSetChat()) {
-							sendChat(diceRobotIntelligence.getChatContent());
-							diceRobotIntelligence.resetHasSetChat();
-						}
-						scheduleSendOpenDice(0, 1); 
-					} else {
-						scheduleSendCallDice(diceRobotIntelligence.getWhatTocall());
-						if ( diceRobotIntelligence.hasSetChat()) {
-							sendChat(diceRobotIntelligence.getChatContent());
-							diceRobotIntelligence.resetHasSetChat();
-						}
-					}
-				}
-			}
-			// 抢开
-			else if ( canOpenDice ) {
-					boolean canCut = diceRobotIntelligence.getCanCut();
-					int multiple = (canCut == true ? 2 :1);
-					ServerLog.info(sessionId, "!!!!!The callUserSeatId is " + callUserSeatId + ", Robot "+nickName
-							+ "'s seatId is " + userList.get(userId).getSeatId());
-					ServerLog.info(sessionId, "[CALL_DICE_RUQUET] *****Robot " + nickName + "rush to open!!!*****");
-					sendOpenDice(1, multiple);
-			}
-			break;
-			
-		case CALL_DICE_REQUEST:
-			callUserId = message.getUserId();
-			callDice = message.getCallDiceRequest().getDice();
-			if ( callDice < 1 || callDice > 6) {
-				ServerLog.info(sessionId, "Error: <CALL_DICE_REQUEST>: dice face value is illegal:"+callDice);
-				callDice = 1;
-			}
-			callDiceNum = message.getCallDiceRequest().getNum();
-			if (message.getCallDiceRequest().hasWilds()){
-				callDiceIsWild = message.getCallDiceRequest().getWilds();
-			} else {
-				callDiceIsWild = false;
-			}
-			// Get the callUser's seatId
-			callUserSeatId = userList.get(callUserId).getSeatId();
-			playerCount = userList.size();
-////			ServerLog.info(sessionId, "Robot " + nickName + " receive CALL_DICE_REQUEST");
-////			ServerLog.info(sessionId, "The playerCount is " + playerCount + ", seatId is " + callUserSeatId 
-//						+". Robot " + nickName + "'s seatId is " + userList.get(userId).getSeatId());
-			canOpenDice = diceRobotIntelligence.canOpenDice(nickName, playerCount,callUserId, callDiceNum, callDice, callDiceIsWild);
-			break;
-			
-		case OPEN_DICE_REQUEST:
-			// Only the callUser who challenged by others will randomly fire expression sendings
-			if ( callUserId != null && callUserId.equals(userId) && RandomUtils.nextInt(2) == 1 ) {
-				scheduleSendChat(chatFuture , 1);
-			}
-			openUserId = message.getUserId();
-			ServerLog.info(sessionId, "Robot "+nickName+" receive OPEN_DICE_REQUEST");
-			
-			break;
-			
+		switch (message.getCommand()){					
 		default:
 			break;
 		}
@@ -403,5 +329,392 @@ public class DrawRobotClient extends AbstractRobotClient {
 		return builder.build();
 	}
 	
+	private void handleStartGameResponse(GameMessage message) {
+//		service.sendStartDraw(user, "杯子", 1);
+		if (message.getResultCode() != GameResultCode.SUCCESS){
+			ServerLog.info(sessionId, "start game but response code is "+message.getResultCode());
+			disconnect();
+		}
+	}
+	
+	private void handleGameTurnCompleteNotification(GameMessage message) {
+		setState(ClientState.WAITING);
+		updateByNotification(message.getNotification());		
+		resetPlayData();
+		
+		if (canQuitNow()){
+			ServerLog.info(sessionId, "reach min user for session, robot can escape now!");
+			disconnect();
+			return;
+		}
+		
+		checkStart();
 
+	}
+
+	private void handleDrawDataNotification(GameMessage message) {
+		updateTurnData(message.getNotification());
+		
+		if (message.getNotification() == null)
+			return;
+			
+		String word = message.getNotification().getWord();
+		if (word != null && word.length() > 0){
+			setState(ClientState.PLAYING);
+			resetPlayData();
+
+			// now here need to simulate guess word...
+			setGuessWordTimer();
+		}
+		
+	}
+
+	private void handleGameStartNotification(GameMessage message) {
+		if (state != ClientState.PLAYING){
+			setState(ClientState.PICK_WORD);
+		}
+		updateByNotification(message.getNotification());								
+	}
+
+	private void handleUserJoinNotification(GameMessage message) {		
+		updateByNotification(message.getNotification());						
+		checkStart();		
+	}	
+
+	private void handleUserQuitNotification(GameMessage message) {
+		String userId = message.getNotification().getQuitUserId();
+		if (userId == null){
+			return;
+		}
+		
+		removeUserByUserId(userId);
+		if (sessionRealUserCount() <= 0){
+			// no other users, quit robot
+			sendQuitGameRequest();
+			disconnect();
+		}
+		
+		checkStart();		
+	}	
+	
+	public void updateTurnData(GeneralNotification notification) {
+		if (notification == null)
+			return;
+		
+		if (notification.hasRound())
+			this.round = notification.getRound();
+		
+		if (notification.hasWord() && notification.getWord().length() > 0)
+			this.word = notification.getWord();
+		
+		if (notification.hasLevel())
+			this.level = notification.getLevel();
+		
+		if (notification.hasLanguage() && notification.getLanguage() > 0)
+			this.language = notification.getLanguage();
+		
+	}
+	
+	public final void sendGuessWord(String guessWord){
+		SendDrawDataRequest request = SendDrawDataRequest.newBuilder().setGuessWord(guessWord)
+			.setGuessUserId(userId)
+			.build();
+		
+		GameMessage message = GameMessage.newBuilder().setCommand(GameCommandType.SEND_DRAW_DATA_REQUEST)
+			.setMessageId(getClientIndex())
+			.setUserId(userId)
+			.setSessionId(sessionId)
+			.setSendDrawDataRequest(request)
+			.build();
+		
+		send(message);
+	}
+	
+	public final void sendStartGame(){		
+		GameMessage message = GameMessage.newBuilder().setCommand(GameCommandType.START_GAME_REQUEST)
+			.setMessageId(getClientIndex())
+			.setUserId(userId)
+			.setSessionId(sessionId)
+			.build();
+		
+		send(message);
+	}
+
+	public final void cleanDraw(){		
+		GameMessage message = GameMessage.newBuilder().setCommand(GameCommandType.CLEAN_DRAW_REQUEST)
+			.setMessageId(getClientIndex())
+			.setUserId(userId)
+			.setSessionId(sessionId)
+			.build();
+		
+		send(message);
+	}
+	
+	public final void sendStartDraw(String word, int level, int language){
+		SendDrawDataRequest request = SendDrawDataRequest.newBuilder().setWord(word)
+			.setLevel(level)
+			.setLanguage(language)
+			.build();
+		
+		GameMessage message = GameMessage.newBuilder().setCommand(GameCommandType.SEND_DRAW_DATA_REQUEST)
+			.setMessageId(getClientIndex())
+			.setUserId(userId)
+			.setSessionId(sessionId)
+			.setSendDrawDataRequest(request)
+			.build();
+		
+		send(message);
+	}
+
+	public final void sendDraw(List<Integer> pointList, float width, int color){
+		SendDrawDataRequest request = SendDrawDataRequest.newBuilder()
+			.addAllPoints(pointList)
+			.setWidth(width)
+			.setColor(color)
+			.build();
+		
+		GameMessage message = GameMessage.newBuilder().setCommand(GameCommandType.SEND_DRAW_DATA_REQUEST)
+			.setMessageId(getClientIndex())
+			.setUserId(userId)
+			.setSessionId(sessionId)
+			.setSendDrawDataRequest(request)
+			.build();
+		
+		send(message);
+	}	
+	
+	public void setGuessWordTimer(){
+				
+		clearGuessWordTimer();				
+		
+		if (currentPlayUserId.equals(userId)){
+			// draw user cannot guess...
+			return;
+		}
+		
+		guessWordTimer = new Timer();
+		guessWordTimer.schedule(new TimerTask(){
+
+			@Override
+			public void run() {	
+				try{
+					
+					if (guessCorrect){
+						ServerLog.info(sessionId, "Robot client, try guess but already guess correct");
+						return;
+					}
+					
+					String guessWord = null;
+//					boolean isMatchWordLen = (language == DrawGameServer.LANGUAGE_CHINESE) ? false : true;
+					
+										
+					boolean isMatchWordLen = true;
+					String randomWord = null;
+					
+					if (guessCount >= 3 && RandomUtil.random(1) == 0){
+						guessWord = word;
+					}
+					else{
+						randomWord = DrawStorageService.getInstance().randomGetWord(language, word);
+						if (randomWord == null){
+							randomWord = WordManager.getInstance().randomGetWord(language, word.length(), isMatchWordLen);
+						}
+
+						guessWord = randomWord;
+					}
+					
+					if (guessWord.equalsIgnoreCase(word)){
+						guessCorrect = true;
+					}
+					
+					guessCount ++;
+					sendGuessWord(guessWord.toUpperCase());
+					
+				}
+				catch (Exception e){
+					ServerLog.error(sessionId, e, "robot client guess word timer ");
+				}
+
+				// schedule next timer
+				if (!guessCorrect){
+					setGuessWordTimer();
+				}
+			}
+			
+		}, 1000*RandomUtil.random(RANDOM_GUESS_WORD_INTERVAL)+1000);
+	}
+	
+	public void clearGuessWordTimer(){
+		if (guessWordTimer != null){
+			guessWordTimer.cancel();
+			guessWordTimer = null;
+		}
+		
+	}
+
+	public void resetPlayData() {
+		clearGuessWordTimer();
+		clearStartGameTimer();
+		clearStartDrawTimer();
+		
+		guessCount = 0;
+		guessCorrect = false;
+	}
+
+	/*
+	public void saveUserList(List<PBGameUser> pbUserList) {
+		if (pbUserList == null)
+			return;
+		
+		userList.clear();
+		for (PBGameUser pbUser : pbUserList){
+			User user = new User(pbUser.getUserId(), pbUser.getNickName(), 
+					pbUser.getAvatar(), pbUser.getGender(),
+					pbUser.getLocation(), pbUser.getSnsUsersList(),
+					null, sessionId, 1, 5);
+			userList.put(pbUser.getUserId(), user);
+		}
+	}
+	*/
+
+	Timer startGameTimer = null;
+	Timer startDrawTimer = null;
+	int sendDrawIndex = 0;
+	private static final int START_TIMER_WAITING_INTERVAL = 10;
+	private static final int START_DRAW_WAITING_INTERVAL = 1;
+	public static int RANDOM_GUESS_WORD_INTERVAL = 20;	
+	
+	public void clearStartDrawTimer(){
+		sendDrawIndex = 0;
+
+		if (startDrawTimer != null){
+			startDrawTimer.cancel();
+			startDrawTimer = null;
+		}		
+	}
+	
+	public void clearStartGameTimer(){
+		if (startGameTimer != null){
+			startGameTimer.cancel();
+			startGameTimer = null;
+		}
+	}
+	
+	public void checkStart() {
+		if (state != ClientState.WAITING)
+			return;
+		
+		if (!this.currentPlayUserId.equals(this.userId)){
+			return;
+		}
+		
+		if (startGameTimer != null){
+			// ongoing...
+			return;
+		}
+		
+		resetPlayData();
+		
+		startGameTimer = new Timer();
+		startGameTimer.schedule(new TimerTask(){
+
+			@Override
+			public void run() {
+				
+				try{
+				
+					Set<String> excludeUserSet = new HashSet<String>();
+					Set<String> userIdList = userList.keySet();
+					userIdList.remove(userId);
+					for (String id : userIdList){
+						if (!AbstractRobotManager.isRobotUser(id)){
+							excludeUserSet.add(id);						
+						}
+					}
+					
+					BasicDBObject obj = DrawStorageService.getInstance().randomGetDraw(sessionId,
+							DrawOnlineServer.getLanguage(),
+							excludeUserSet);
+					if (obj == null){
+						ServerLog.warn(sessionId, "robot cannot find any draw for simulation! have to quit");
+						disconnect();
+						return;					
+					}
+	
+					byte[] data = (byte[])obj.get(DBConstants.F_DRAW_DATA);
+					if (data == null){
+						ServerLog.warn(sessionId, "robot cannot find any draw for simulation! have to quit");
+						disconnect();
+						return;					
+					}
+					
+					try {
+						pbDraw = PBDraw.parseFrom(data);
+					} catch (InvalidProtocolBufferException e) {
+						ServerLog.warn(sessionId, "robot catch exception while parsing draw data, e="+e.toString());
+						disconnect();
+						return;					
+					}
+					
+					String word = obj.getString(DBConstants.F_DRAW_WORD);
+					int level = obj.getInt(DBConstants.F_DRAW_LEVEL);
+					int language = obj.getInt(DBConstants.F_DRAW_LANGUAGE);
+					
+					sendStartGame();
+					sendStartDraw(word, level, language);				
+	
+					state = ClientState.PLAYING;				
+					scheduleSendDrawDataTimer(pbDraw);	
+				}
+				catch(Exception e){
+					ServerLog.error(sessionId, e);					
+				}
+			}
+
+
+			
+		}, RandomUtil.random(START_TIMER_WAITING_INTERVAL)*1000+3000);
+		
+	}
+	
+	private void scheduleSendDrawDataTimer(final PBDraw pbDraw) {
+		if (state != ClientState.PLAYING){
+			return;
+		}
+		
+		if (!this.currentPlayUserId.equals(this.userId)){
+			return;
+		}
+		
+		// clear previous draw timer if exists
+		clearStartDrawTimer();
+		
+		startDrawTimer = new Timer();
+		startDrawTimer.schedule(new TimerTask(){
+
+			@Override
+			public void run() {
+				try{
+					if (sendDrawIndex < 0 || sendDrawIndex >= pbDraw.getDrawDataCount()){
+						ServerLog.info(sessionId, "robot has no more draw data");
+						clearStartDrawTimer();
+						return;
+					}
+					
+					PBDrawAction drawData = pbDraw.getDrawData(sendDrawIndex);
+					if (drawData.getType() == DrawAction.DRAW_ACTION_TYPE_CLEAN)
+						cleanDraw();
+					else
+						sendDraw(drawData.getPointsList(), drawData.getWidth(), drawData.getColor());
+					
+					sendDrawIndex++;
+				}
+				catch(Exception e){
+					ServerLog.error(sessionId, e);					
+				}
+			}
+			
+		}, START_DRAW_WAITING_INTERVAL*1000+1000, START_DRAW_WAITING_INTERVAL*1000+1000);
+	}
+	
 }

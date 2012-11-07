@@ -6,5 +6,5 @@ mvn clean install
 cd ../Common_Java_Game
 mvn clean install 
 
-cd ../DiceTrafficServer
+cd ../DrawGameServer
 mvn clean install
