@@ -64,7 +64,7 @@ public class DrawGameSessionManager extends GameSessionManager {
 
 	@Override
 	public String getGameId() {
-		return DBConstants.DRAW_GAME_ID;
+		return DBConstants.GAME_ID_DRAW;
 	}
 			
 	// from GameConstantProtos
