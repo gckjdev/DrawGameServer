@@ -107,7 +107,6 @@ public class DrawRobotClient extends AbstractRobotClient {
 		oldExp = experience = user.getExpByAppId(DBConstants.APPID_DICE);
 		level = user.getLevelByAppId(DBConstants.APPID_DICE); 
 		balance = user.getBalance();
-		dbclient = new MongoDBClient(DBConstants.D_GAME);
 	}
 	
 	// for draw game compatibility

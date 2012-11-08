@@ -19,7 +19,12 @@ public class DrawGameSessionManager extends GameSessionManager {
 	}
 
 	@Override
-	public void userQuitSession(GameSession session, String userId, boolean needFireEvent) {
+	public void userQuitSession(GameSession session, String userId, boolean needFireEvent, boolean needRemoveUserChannel) {
+		
+		if (session == null || userId == null){
+			return;
+		}
+		
 		int sessionId = session.getSessionId();
 		ServerLog.info(sessionId, "user "+userId+" quit");
 
@@ -30,13 +35,7 @@ public class DrawGameSessionManager extends GameSessionManager {
 			return;
 		}
 				
-		boolean removeUser = true;
-		
-//		(user.isPlaying() == false || sessionUserCount == 1);
-		
-		if (!removeUser){
-			session.takeOverUser(userId);
-		}
+		boolean removeUserFromSession = true;		// always true here
 		
 		GameCommandType command = null;		
 		if (session.isCurrentPlayUser(userId)){
@@ -57,8 +56,8 @@ public class DrawGameSessionManager extends GameSessionManager {
 			GameEventExecutor.getInstance().fireAndDispatchEvent(command, sessionId, userId);
 		}
 		
-		if (removeUser){
-			SessionUserService.getInstance().removeUser(session, userId);
+		if (removeUserFromSession){
+			SessionUserService.getInstance().removeUser(session, userId, needRemoveUserChannel);
 		}
 	}
 

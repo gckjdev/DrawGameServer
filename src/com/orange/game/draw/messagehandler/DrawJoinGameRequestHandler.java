@@ -13,6 +13,7 @@ import com.orange.game.traffic.messagehandler.room.JoinGameRequestHandler;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
 import com.orange.game.traffic.model.manager.GameSessionAllocationManager;
+import com.orange.game.traffic.server.GameEventExecutor;
 import com.orange.game.traffic.server.HandlerUtils;
 import com.orange.game.traffic.server.NotificationUtils;
 import com.orange.game.traffic.service.SessionUserService;
@@ -69,7 +70,7 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		
 		
 		GameSession session = null;
-		if (joinRequest.hasTargetSessionId() || request.hasSessionId()){
+		if (joinRequest.hasTargetSessionId()){
 			
 			int sessionId;
 			if (joinRequest.hasTargetSessionId()){
@@ -82,8 +83,24 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 			session = GameSessionAllocationManager.getInstance().allocSession(userId, sessionId);			
 		}
 		else{					
+			Set<Integer> excludeSessionSet = new HashSet<Integer>();
+			if (request.getJoinGameRequest().hasSessionToBeChange()){
+				
+				// user quit current session	
+				GameSession oldSession = GameEventExecutor.getInstance().getSessionManager().findSessionById((int)request.getJoinGameRequest().getSessionToBeChange());
+				GameEventExecutor.getInstance().getSessionManager().userQuitSession(oldSession, userId, true, false);
+
+				// create exclude session set
+				List<Long> list = joinRequest.getExcludeSessionIdList();
+				if (list != null){
+					for (Long i : list){
+						excludeSessionSet.add(i.intValue());
+					}
+				}
+			}
+			
 			// no session id, alloc a session from session queue
-			session = GameSessionAllocationManager.getInstance().allocSession(userId);
+			session = GameSessionAllocationManager.getInstance().allocSession(userId, excludeSessionSet);
 		}
 		
 		if (session == null){
