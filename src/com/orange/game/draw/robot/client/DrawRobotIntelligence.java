@@ -9,6 +9,7 @@ import org.apache.commons.lang.math.RandomUtils;
 
 import com.orange.network.game.protocol.constants.GameConstantsProtos.DiceGameRuleType;
 
+@Deprecated
 public class DrawRobotIntelligence {
 	
 		private int ruleType ;

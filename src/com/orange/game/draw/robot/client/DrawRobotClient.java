@@ -309,25 +309,15 @@ public class DrawRobotClient extends AbstractRobotClient {
 		firstRound = false;
 		rollEndChatLock = 2;
 	}
-
+	
+	public String getAppId() {
+		return DBConstants.APPID_DRAW;
+	}
 	
 	@Override
-	public String getAppId() {
-		return DBConstants.APPID_DICE;
-	}
-
-	@Override
-	public boolean updateLevelAndExp() {
-		
-		 boolean result = false;
-			   
-		 DBObject object = UserManager.updateLevelAndExp(dbclient, userId, DBConstants.DICE_GAME_ID, experience, level, true, ServiceConstant.CONST_SYNC_TYPE_UPDATE, 0);  
-		 if ( object != null) {
-			 result = true;
-		 }
-		 return result;
-	}
-
+	public String getGameId() {
+		return DBConstants.DRAW_GAME_ID;
+	}	
 	
 	@Override
 	public PBGameUser toPBGameUserSpecificPart(Builder builder) {
@@ -749,5 +739,6 @@ public class DrawRobotClient extends AbstractRobotClient {
 			
 		}, delay); //START_DRAW_WAITING_INTERVAL*1000+1000, START_DRAW_WAITING_INTERVAL*1000+1000);
 	}
+
 	
 }

@@ -186,48 +186,5 @@ public class DrawRobotChatContent {
 			return result;
 	};
 	
-//	public String[] prepareChatContent() {
-//		
-//		// index 0: content( only valid for TEXT)
-//		// index 1: contentVoiceId or expressionId,depent on contentType
-//		// index 2: contentType
-//		String[] result = {"NULL", "NULL", "NULL"};
-//		
-//		
-//		String[] tempArray = {"NULL","NULL"};
-//		int tmp = 0;
-//		
-//		// Expression or content
-//		if ( RandomUtils.nextInt(2) == 1 ) {
-//			// TEXT
-//			 result[IDX_CONTNET_TYPE] = Integer.toString(TEXT);
-//		    tmp = RandomUtils.nextInt(3);
-//		     if ( tmp < 2) {
-//		    	 tempArray = getContent(VoiceContent.CHANLLENGE_YOU);
-//		     } else {
-//		    	 tempArray = getContent(VoiceContent.KEEP_PLAYING);
-//		      }
-//		     result[IDX_CONTENT] = tempArray[IDX_CONTENT];
-//		     result[IDX_CONTENTID] = tempArray[IDX_CONTENTID];
-//		}
-//		else {
-//			// EXPRESSION
-//			result[IDX_CONTNET_TYPE] = Integer.toString(EXPRESSION);
-//			tmp = RandomUtils.nextInt(3);
-//			if ( tmp == 0) {
-//				 result[IDX_CONTENTID] = getExpression(Expression.SMILE);
-//			} else if ( tmp == 1) {
-//				 result[IDX_CONTENTID] = getExpression(Expression.PROUND);
-//			} else if ( tmp == 2) {
-//				result[IDX_CONTENTID] = getExpression(Expression.EMBARRASS);
-//			} else {
-//				result[IDX_CONTENTID] = getExpression(Expression.WORRY);
-//			}
-//		}
-//		
-//		return result;
-//		      
-//	}
-	
 
 }

@@ -1,6 +1,7 @@
 package com.orange.game.draw.model;
 
 import com.orange.common.log.ServerLog;
+import com.orange.game.constants.DBConstants;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
 import com.orange.game.traffic.model.manager.GameSessionManager;
@@ -63,21 +64,25 @@ public class DrawGameSessionManager extends GameSessionManager {
 
 	@Override
 	public String getGameId() {
-		return DrawGameConstant.DICE_GAME_ID;
+		return DBConstants.DRAW_GAME_ID;
 	}
-
-	
-	@Override
+			
 	// from GameConstantProtos
 	// RULE_NORMAL_VALUE = 0;
 	// RULE_HIGH_VALUE = 1;
 	// RULE_SUPER_HIGH_VALUE = 2;
-	public int getRuleType() {
+	static int ruleType = loadRuleTypeFromConfig();		
+	public static int loadRuleTypeFromConfig() {
 		String ruleType = System.getProperty("ruletype");
 		if (ruleType != null && !ruleType.isEmpty()){
 			return Integer.parseInt(ruleType);
 		}
 		return DiceGameRuleType.RULE_NORMAL_VALUE; // default
+	}
+
+	@Override
+	public int getRuleType() {
+		return ruleType;
 	}
 
 	
@@ -90,6 +95,7 @@ public class DrawGameSessionManager extends GameSessionManager {
 			}
 			return 0;
 	}
+
 
 
 	

@@ -46,15 +46,11 @@ public class DrawDataRequestHandler extends AbstractMessageHandler {
 			session.startNewTurn(drawRequest.getWord(), drawRequest.getLevel(), drawRequest.getLanguage());
 
 			// schedule timer for finishing this turn
-//			gameService.scheduleGameSessionExpireTimer(session);
-			
 			stateMachineCommandType = GameCommandType.LOCAL_WORD_PICKED;
 		}
 		
 		
 		if (drawRequest.hasGuessWord()){
-//			GameLog.info(session.getSessionId(), "user "+drawRequest.getGuessUserId()+ 
-//					" guess "+drawRequest.getGuessWord());
 			GameUser guessUser = session.findUser(drawRequest.getGuessUserId());
 			session.userGuessWord(guessUser, drawRequest.getGuessWord());						
 
@@ -64,10 +60,6 @@ public class DrawDataRequestHandler extends AbstractMessageHandler {
 			}		
 		}				
 						
-//		if (reason != GameCompleteReason.REASON_NOT_COMPLETE){
-//			gameService.fireTurnFinishEvent(session, reason);
-//		}
-		
 		SendDrawDataRequest drawData = message.getSendDrawDataRequest();
 		if (drawData == null){
 			return;
@@ -109,14 +101,6 @@ public class DrawDataRequestHandler extends AbstractMessageHandler {
 		// drive state machine running
 		if (stateMachineCommandType != null){			
 			GameEventExecutor.getInstance().fireAndDispatchEvent(stateMachineCommandType, session.getSessionId(), message.getUserId());
-//			
-//			GameEvent stateMachineEvent = new GameEvent(
-//					stateMachineCommandType, 
-//					session.getSessionId(), 
-//					gameEvent.getMessage(), 
-//					channel);
-//			
-//			gameService.dispatchEvent(stateMachineEvent);
 		}
 	}
 

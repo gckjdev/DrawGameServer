@@ -5,16 +5,16 @@ import com.orange.common.statemachine.Condition;
 import com.orange.common.statemachine.DecisionPoint;
 import com.orange.common.statemachine.State;
 import com.orange.common.statemachine.StateMachine;
-import com.orange.common.statemachine.StateMachineBuilder;
 import com.orange.game.draw.statemachine.action.DrawGameAction;
 import com.orange.game.draw.statemachine.state.GameState;
 import com.orange.game.draw.statemachine.state.GameStateKey;
 import com.orange.game.traffic.statemachine.CommonGameAction;
 import com.orange.game.traffic.statemachine.CommonGameCondition;
 import com.orange.game.traffic.statemachine.CommonGameState;
+import com.orange.game.traffic.statemachine.CommonStateMachineBuilder;
 import com.orange.network.game.protocol.constants.GameConstantsProtos.GameCommandType;
 
-public class DrawGameStateMachineBuilder extends StateMachineBuilder {
+public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 
 	// thread-safe singleton implementation
     private static DrawGameStateMachineBuilder builder = new DrawGameStateMachineBuilder();
@@ -25,52 +25,30 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
     public static DrawGameStateMachineBuilder getInstance() {         	
     	return builder; 
     } 
-    
-
-	
-//   public static final int START_GAME_TIMEOUT = 3;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
-//	public static final int WAIT_CLAIM_TIMEOUT = 18;
-//	public static final int ROLL_DICE_TIMEOUT = 3;
-//	public static final int SHOW_RESULT_TIMEOUT = 10;
-//	public static final int TAKEN_OVER_USER_WAIT_TIMEOUT = 1;
-//	public static final int WAIT_USER_BET_TIMEOUT = 7;
-	
+    	
 	static final int PICK_WORD_TIMEOUT = 60;
 	static final int START_GAME_TIMEOUT = 5;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
 	static final int USER_WAIT_TIMEOUT = 60*30;		// 30 minutes
 	static final int DRAW_GUESS_TIMEOUT = 60;
 	
-    	
+
+	final Action completeGame = new DrawGameAction.CompleteGame();
+	final Action playGame = new DrawGameAction.PlayGame();
+	final Action calculateDrawUserCoins = new DrawGameAction.CalculateDrawUserCoins();	
+	final Action setOneUserWaitTimer = new DrawGameAction.SetOneUserWaitTimer();
+	
+	final Action setStartGameTimer = new CommonGameAction.CommonTimer(START_GAME_TIMEOUT, DrawGameAction.DrawTimerType.START);
+	final Action setWaitPickWordTimer = new CommonGameAction.CommonTimer(PICK_WORD_TIMEOUT, DrawGameAction.DrawTimerType.PICK_WORD);
+	final Action setDrawGuessTimer = new CommonGameAction.CommonTimer(DRAW_GUESS_TIMEOUT, DrawGameAction.DrawTimerType.DRAW_GUESS);
+	
+	final Action broadcastDrawUserChange = new DrawGameAction.BroadcastDrawUserChange();
+	
+	final Action fireStartGame = new DrawGameAction.FireStartGame();
+	
     @Override
 	public StateMachine buildStateMachine() {
 		StateMachine sm = new StateMachine();
 		
-		Action initGame = new CommonGameAction.InitGame();
-		Action startGame = new DrawGameAction.StartGame();
-		Action completeGame = new DrawGameAction.CompleteGame();
-//		Action selectPlayUser = new DrawGameAction.selectPlayUser();
-		Action selectPlayUser = new CommonGameAction.SelectPlayUser();		
-//		Action selectDrawUser = new DrawGameAction.SelectDrawUser();
-		Action kickDrawUser = new DrawGameAction.KickDrawUser();
-		Action playGame = new DrawGameAction.PlayGame();
-		Action prepareRobot = new DrawGameAction.PrepareRobot();
-		Action calculateDrawUserCoins = new DrawGameAction.CalculateDrawUserCoins();
-//		Action selectPlayUserIfNone = new DrawGameAction.selectPlayUserIfNone();
-		
-		Action setOneUserWaitTimer = new DrawGameAction.SetOneUserWaitTimer();
-		Action setStartGameTimer = new CommonGameAction.CommonTimer(START_GAME_TIMEOUT, DrawGameAction.DrawTimerType.START);
-		Action setWaitPickWordTimer = new CommonGameAction.CommonTimer(PICK_WORD_TIMEOUT, DrawGameAction.DrawTimerType.PICK_WORD);
-		Action setDrawGuessTimer = new CommonGameAction.CommonTimer(DRAW_GUESS_TIMEOUT, DrawGameAction.DrawTimerType.DRAW_GUESS);
-		Action clearTimer = new CommonGameAction.ClearTimer();
-		Action clearRobotTimer = new DrawGameAction.ClearRobotTimer();
-		
-		Action broadcastDrawUserChange = new DrawGameAction.BroadcastDrawUserChange();
-//		Action clearAllUserPlaying = new CommonGameAction.ClearAllUserPlaying();		
-		Action setAllUserPlaying = new CommonGameAction.SetAllUserPlaying();		
-		
-		Action fireStartGame = new DrawGameAction.FireStartGame();
-
-		Condition checkUserCount = new CommonGameCondition.CheckUserCount();
 		
 		sm.addState(INIT_STATE)		
 			.addAction(initGame)
@@ -139,7 +117,7 @@ public class DrawGameStateMachineBuilder extends StateMachineBuilder {
 		
 		sm.addState(new GameState(GameStateKey.KICK_DRAW_USER))
 //			.addAction(setAllUserPlaying)
-			.addAction(kickDrawUser)
+			.addAction(kickPlayUser)
 			.addAction(selectPlayUser)
 			.addAction(broadcastDrawUserChange)
 			.setDecisionPoint(new DecisionPoint(null){
