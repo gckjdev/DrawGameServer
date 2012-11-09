@@ -18,6 +18,7 @@ public class DrawGameSessionManager extends GameSessionManager {
 		return new DrawGameSession(sessionId, name, password, createByUser, createBy, ruleType,testEnable);
 	}
 
+	/*
 	@Override
 	public void userQuitSession(GameSession session, String userId, boolean needFireEvent, boolean needRemoveUserChannel) {
 		
@@ -60,6 +61,7 @@ public class DrawGameSessionManager extends GameSessionManager {
 			SessionUserService.getInstance().removeUser(session, userId, needRemoveUserChannel);
 		}
 	}
+	*/
 
 	@Override
 	public String getGameId() {
@@ -83,7 +85,6 @@ public class DrawGameSessionManager extends GameSessionManager {
 	public int getRuleType() {
 		return ruleType;
 	}
-
 	
 	@Override
 	// On: 1, Off:0[default]
@@ -95,7 +96,14 @@ public class DrawGameSessionManager extends GameSessionManager {
 			return 0;
 	}
 
+	@Override
+	public void updateQuitUserInfo(GameSession session, GameUser quitUser) {
+	}
 
-
+	@Override
+	public boolean takeOverWhenUserQuit(GameSession session, GameUser quitUser,
+			int sessionUserCount) {
+		return false;
+	}
 	
 }
