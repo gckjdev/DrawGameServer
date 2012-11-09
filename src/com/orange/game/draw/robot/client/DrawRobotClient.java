@@ -307,6 +307,10 @@ public class DrawRobotClient extends AbstractRobotClient {
 		this.robotWinThisGame = robotWinThisGame;
 		firstRound = false;
 		rollEndChatLock = 2;
+		
+		this.clearGuessWordTimer();
+		this.clearStartDrawTimer();
+		this.clearStartGameTimer();
 	}
 	
 	public String getAppId() {
