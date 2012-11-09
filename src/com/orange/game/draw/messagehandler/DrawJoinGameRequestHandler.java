@@ -117,6 +117,8 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		// send response
 		sendResponseForUserJoin(session, user.getPBUser(), channel, request);
 		
+		// update user game status
+		sessionManager.updateUserEnterGameStatus(session, user);		
 		return session;				
 	}	
 	
