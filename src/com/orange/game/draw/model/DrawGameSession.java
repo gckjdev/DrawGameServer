@@ -18,8 +18,8 @@ public class DrawGameSession extends GameSession {
 	private boolean decreaseTimeForNextPlayUser = false;
 
 	
-	public DrawGameSession(int sessionId, String name, String password, boolean createByUser, String createBy, int ruleType,int testEnable) {
-		super(sessionId, name, password, createByUser, createBy, ruleType, testEnable);
+	public DrawGameSession(int sessionId, String name, String password, boolean createByUser, String createBy, int ruleType, int maxPlayerCount, int testEnable) {
+		super(sessionId, name, password, createByUser, createBy, ruleType, maxPlayerCount, testEnable);
 		// init state
 		this.currentState = DrawGameStateMachineBuilder.INIT_STATE;
 	}

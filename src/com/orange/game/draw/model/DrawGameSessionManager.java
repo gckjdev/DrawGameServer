@@ -1,21 +1,17 @@
 package com.orange.game.draw.model;
 
-import com.orange.common.log.ServerLog;
 import com.orange.game.constants.DBConstants;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
 import com.orange.game.traffic.model.manager.GameSessionManager;
 import com.orange.network.game.protocol.constants.GameConstantsProtos.DiceGameRuleType;
-import com.orange.game.traffic.server.GameEventExecutor;
-import com.orange.game.traffic.server.NotificationUtils;
-import com.orange.game.traffic.service.SessionUserService;
-import com.orange.network.game.protocol.constants.GameConstantsProtos.GameCommandType;
 
 public class DrawGameSessionManager extends GameSessionManager {
 
+	private static final int MAX_PLAYER_PER_SESSION = 6;
 	@Override
-	public GameSession createSession(int sessionId, String name, String password, boolean createByUser, String createBy, int ruleType,int testEnable) {
-		return new DrawGameSession(sessionId, name, password, createByUser, createBy, ruleType,testEnable);
+	public GameSession createSession(int sessionId, String name, String password, boolean createByUser, String createBy, int ruleType, int maxPlayerCount, int testEnable) {
+		return new DrawGameSession(sessionId, name, password, createByUser, createBy, ruleType, maxPlayerCount, testEnable);
 	}
 
 	/*
@@ -104,6 +100,11 @@ public class DrawGameSessionManager extends GameSessionManager {
 	public boolean takeOverWhenUserQuit(GameSession session, GameUser quitUser,
 			int sessionUserCount) {
 		return false;
+	}
+
+	@Override
+	public int getMaxPlayerCount() {
+		return readMaxPlayerCount(MAX_PLAYER_PER_SESSION);
 	}
 	
 }
