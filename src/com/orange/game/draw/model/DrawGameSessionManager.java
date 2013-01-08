@@ -14,51 +14,6 @@ public class DrawGameSessionManager extends GameSessionManager {
 		return new DrawGameSession(sessionId, name, password, createByUser, createBy, ruleType, maxPlayerCount, testEnable);
 	}
 
-	/*
-	@Override
-	public void userQuitSession(GameSession session, String userId, boolean needFireEvent, boolean needRemoveUserChannel) {
-		
-		if (session == null || userId == null){
-			return;
-		}
-		
-		int sessionId = session.getSessionId();
-		ServerLog.info(sessionId, "user "+userId+" quit");
-
-		int sessionUserCount = session.getUserCount();
-		GameUser user = session.findUser(userId);
-		if (user == null){
-			ServerLog.info(sessionId, "user "+userId+" quit, but user not found in session");
-			return;
-		}
-				
-		boolean removeUserFromSession = true;		// always true here
-		
-		GameCommandType command = null;		
-		if (session.isCurrentPlayUser(userId)){
-			command = GameCommandType.LOCAL_PLAY_USER_QUIT;			
-		}
-		else if (sessionUserCount <= 2){
-			command = GameCommandType.LOCAL_ALL_OTHER_USER_QUIT;			
-		}
-		else {
-			command = GameCommandType.LOCAL_OTHER_USER_QUIT;						
-		}			
-		
-		// broadcast user exit message to all other users
-		NotificationUtils.broadcastUserStatusChangeNotification(session, userId);			
-		
-		// fire message
-		if (needFireEvent){
-			GameEventExecutor.getInstance().fireAndDispatchEvent(command, sessionId, userId);
-		}
-		
-		if (removeUserFromSession){
-			SessionUserService.getInstance().removeUser(session, userId, needRemoveUserChannel);
-		}
-	}
-	*/
-
 	@Override
 	public String getGameId() {
 		return DBConstants.GAME_ID_DRAW;

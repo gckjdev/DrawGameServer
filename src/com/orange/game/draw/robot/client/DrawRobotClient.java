@@ -360,7 +360,7 @@ public class DrawRobotClient extends AbstractRobotClient {
 		updateByNotification(message.getNotification());		
 		resetPlayData();
 		
-		if (canQuitNow()){
+		if (canQuitNow(false)){
 			ServerLog.info(sessionId, "reach min user for session, robot can escape now!");
 			disconnect();
 			return;

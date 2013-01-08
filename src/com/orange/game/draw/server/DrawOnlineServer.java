@@ -8,9 +8,9 @@ import com.orange.common.statemachine.StateMachine;
 import com.orange.game.draw.model.DrawGameSessionManager;
 import com.orange.game.draw.robot.client.DrawRobotManager;
 import com.orange.game.draw.statemachine.DrawGameStateMachineBuilder;
+import com.orange.game.traffic.robot.client.AbstractRobotManager;
 import com.orange.game.traffic.robot.client.RobotService;
 import com.orange.game.traffic.server.GameServer;
-import com.orange.game.traffic.server.ServerMonitor;
 
 public class DrawOnlineServer {
 	
@@ -41,14 +41,15 @@ public class DrawOnlineServer {
 	 */
 	public static void main(String[] args) {
 
-		RobotService.getInstance().initRobotManager(new DrawRobotManager());
-		
+		AbstractRobotManager robotManager = new DrawRobotManager();
+		RobotService.getInstance().initRobotManager(robotManager);
+				
 		// init data
 		StateMachine diceStateMachine = DrawGameStateMachineBuilder.getInstance().buildStateMachine();
 		DrawGameSessionManager sessionManager = new DrawGameSessionManager();
 		
 		// create server
-		GameServer server = new GameServer(new DrawGameServerHandler(), diceStateMachine, sessionManager);
+		GameServer server = new GameServer(new DrawGameServerHandler(), diceStateMachine, sessionManager, robotManager);
 		
 		// start server
 		server.start();			
