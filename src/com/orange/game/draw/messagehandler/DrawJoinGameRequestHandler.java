@@ -82,6 +82,10 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 			
 			session = GameSessionAllocationManager.getInstance().allocSession(userId, sessionId);			
 		}
+		else if (request.hasSessionId()){
+			// has session id, alloc user into the session directly
+			session = GameSessionAllocationManager.getInstance().allocSession(userId, (int)request.getSessionId());
+		}
 		else{					
 			Set<Integer> excludeSessionSet = new HashSet<Integer>();
 			if (request.getJoinGameRequest().hasSessionToBeChange()){
