@@ -27,7 +27,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
     } 
     	
 	static final int PICK_WORD_TIMEOUT = 60;
-	static final int START_GAME_TIMEOUT = 5;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
+	static final int START_GAME_TIMEOUT = 36;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
 	static final int USER_WAIT_TIMEOUT = 60*30;		// 30 minutes
 	static final int DRAW_GUESS_TIMEOUT = 60;
 	
