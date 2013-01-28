@@ -99,7 +99,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
 			.addEmptyTransition(GameCommandType.LOCAL_NEW_USER_JOIN)
 			.addTransition(GameCommandType.LOCAL_START_GAME, GameStateKey.FIRE_START_GAME)
-			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.FIRE_START_GAME)	
+			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.START_GAME_TIMEOUT)	
 			.addTransition(GameCommandType.LOCAL_DRAW_USER_CHAT, GameStateKey.WAIT_FOR_START_GAME)	
 			.addAction(clearTimer);
 				
@@ -126,6 +126,16 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 					return GameStateKey.CHECK_USER_COUNT;	// goto check user count state directly
 				}
 			});
+		
+		sm.addState(new GameState(GameStateKey.START_GAME_TIMEOUT))
+			.addAction(incUserZoombieTimeOut)
+			.setDecisionPoint(new DecisionPoint(null){
+				@Override
+				public Object decideNextState(Object context){
+					return GameStateKey.FIRE_START_GAME;	// goto check user count state directly
+				}
+			});
+		
 		
 		sm.addState(new GameState(GameStateKey.FIRE_START_GAME))
 //			.addAction(setAllUserPlaying)
@@ -164,6 +174,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addAction(calculateDrawUserCoins)
 			.addAction(selectPlayUser)
 			.addAction(completeGame)
+			.addAction(kickZoombieUser)			
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
 				public Object decideNextState(Object context){
