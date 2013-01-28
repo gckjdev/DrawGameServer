@@ -26,7 +26,7 @@ public class DrawChatRequestHandler extends AbstractMessageHandler {
 			return;				
 		
 		String fromUserId = message.getUserId();
-		if (session.getCurrentPlayUserId().equals(fromUserId)){
+		if (session.safeGetCurrentPlayUserId().equals(fromUserId)){
 			// fire draw user chat event
 			GameEventExecutor.getInstance().fireAndDispatchEvent(GameCommandType.LOCAL_DRAW_USER_CHAT, 
 					session.getSessionId(), fromUserId);

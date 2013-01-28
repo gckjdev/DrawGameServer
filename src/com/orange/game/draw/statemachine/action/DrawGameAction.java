@@ -148,7 +148,7 @@ public class DrawGameAction{
 			for (GameUser user : list){						
 				GameMessageProtos.GeneralNotification notification;			
 				notification = GameMessageProtos.GeneralNotification.newBuilder()		
-					.setCurrentPlayUserId(session.getCurrentPlayUserId())
+					.setCurrentPlayUserId(session.safeGetCurrentPlayUserId())
 					.setTurnGainCoins(session.getCurrentUserGainCoins(user.getUserId()))
 					.build();				
 				
