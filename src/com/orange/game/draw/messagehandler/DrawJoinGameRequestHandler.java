@@ -66,8 +66,15 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		if (snsUser != null){
 			builder.addAllSnsUsers(snsUser);
 		}
-		PBGameUser pbUser = builder.build();
-		
+
+		// use this to support new client interface
+		PBGameUser pbUser = null;
+		if (joinRequest.hasUser() && joinRequest.getUser() != null){
+			pbUser = joinRequest.getUser();
+		}
+		else{
+			pbUser = builder.build();
+		}		
 		
 		GameSession session = null;
 		if (joinRequest.hasTargetSessionId()){
