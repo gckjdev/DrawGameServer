@@ -8,6 +8,8 @@ import com.orange.common.statemachine.StateMachine;
 import com.orange.game.draw.statemachine.action.DrawGameAction;
 import com.orange.game.draw.statemachine.state.GameState;
 import com.orange.game.draw.statemachine.state.GameStateKey;
+import com.orange.game.traffic.model.dao.GameSession;
+import com.orange.game.traffic.server.GameEventExecutor;
 import com.orange.game.traffic.statemachine.CommonGameAction;
 import com.orange.game.traffic.statemachine.CommonGameCondition;
 import com.orange.game.traffic.statemachine.CommonGameState;
@@ -66,8 +68,13 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.setDecisionPoint(new DecisionPoint(checkUserCount){
 				@Override
 				public Object decideNextState(Object context){
+					GameSession session = (GameSession)context;
 					int userCount = condition.decide(context);
 					if (userCount == 0){
+						if ( session.isCreatedByUser() ) {
+							GameEventExecutor.getInstance().executeForSessionRealease(session.getSessionId());
+							return null;
+						}
 						return GameStateKey.CREATE;
 					}
 					else if (userCount == 1){ // only one user
@@ -94,7 +101,6 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 //			.addAction(setAllUserPlaying)
 			.addAction(setStartGameTimer)
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
-//			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.CHECK_USER_COUNT)	
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
 			.addEmptyTransition(GameCommandType.LOCAL_NEW_USER_JOIN)
