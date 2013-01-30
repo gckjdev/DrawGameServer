@@ -2,8 +2,8 @@
 
 line=' ========= '
 echo ""
-echo $line' add files (*.java ) '$line
-git add *.java commit.sh
+echo $line' add files (*.java *.js) '$line
+git add *.java commit.sh *.js
 echo ''
 
 echo $line' oh, commit files. comment: '"$1"" "$line
