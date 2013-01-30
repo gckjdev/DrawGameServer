@@ -5,18 +5,19 @@
 			<id>local-nexus</id>
 			<name>local nexus</name>
 			<url>http://localhost:8091/nexus/content/groups/public</url>
-		</repository> -->
+		</repository> 
 		<repository>
 			<id>nexus</id>
 			<name>local nexus</name>
 			<url>http://192.168.1.101:8091/nexus/content/groups/public</url>
 		</repository>
+-->		
 		<repository>
 			<id>repo1 central</id>
 			<name>Maven Central Repo1</name>
 			<url>http://repo1.maven.org/maven2</url>
 		</repository>
-        
+<!--        
         <repository>
             <id>repository.jboss.org</id>
             <url>https://repository.jboss.org/nexus/content/repositories/releases/</url>
@@ -24,7 +25,7 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        
+-->        
 	</repositories>
 
 	<modelVersion>4.0.0</modelVersion>

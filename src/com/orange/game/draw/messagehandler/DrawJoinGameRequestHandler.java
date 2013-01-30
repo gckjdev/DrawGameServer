@@ -4,15 +4,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.MessageEvent;
 
+import com.orange.common.utils.StringUtil;
 import com.orange.game.constants.DBConstants;
 import com.orange.game.draw.model.DrawGameSession;
 import com.orange.game.traffic.messagehandler.room.JoinGameRequestHandler;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
 import com.orange.game.traffic.model.manager.GameSessionAllocationManager;
+import com.orange.game.traffic.model.manager.GameSessionManager;
 import com.orange.game.traffic.server.GameEventExecutor;
 import com.orange.game.traffic.server.HandlerUtils;
 import com.orange.game.traffic.server.NotificationUtils;
@@ -143,8 +146,14 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		
 		JoinGameResponse response;
 				
-		// TODO how to adapt to new version?
-		builder.getGameSessionBuilder().setName(Integer.toString(session.getSessionId()));
+		// to adapt to old version
+		String roomName = session.getName();
+		if (StringUtil.isEmpty(roomName)){
+			roomName = Integer.toString(session.getSessionId());
+		}
+		else{
+			builder.getGameSessionBuilder().setName(roomName);
+		}
 		
 		if (session.isGamePlaying()) {
 			//TODO : to be completed

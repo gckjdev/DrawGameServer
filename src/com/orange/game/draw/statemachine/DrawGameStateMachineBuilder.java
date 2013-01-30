@@ -128,7 +128,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			});
 		
 		sm.addState(new GameState(GameStateKey.START_GAME_TIMEOUT))
-			.addAction(incUserZoombieTimeOut)
+			.addAction(incUserZombieTimeOut)
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
 				public Object decideNextState(Object context){
@@ -174,7 +174,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addAction(calculateDrawUserCoins)
 			.addAction(selectPlayUser)
 			.addAction(completeGame)
-			.addAction(kickZoombieUser)			
+			.addAction(kickZombieUser)			
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
 				public Object decideNextState(Object context){
