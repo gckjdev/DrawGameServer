@@ -564,6 +564,7 @@ public class DrawRobotClient extends AbstractRobotClient {
 	
 	public void clearGuessWordTimer(){
 		if (guessWordTimer != null){
+			ServerLog.info(sessionId, "Robot "+nickName+ " clearGuessWordTimer");
 			guessWordTimer.cancel();
 			guessWordTimer = null;
 		}
@@ -604,6 +605,7 @@ public class DrawRobotClient extends AbstractRobotClient {
 	
 	public void clearStartDrawTimer(){
 		if (startDrawTimer != null){
+			ServerLog.info(sessionId, "Robot "+nickName+ " clearStartDrawTimer");						
 			startDrawTimer.cancel();
 			startDrawTimer = null;
 		}		
@@ -611,6 +613,7 @@ public class DrawRobotClient extends AbstractRobotClient {
 	
 	public void clearStartGameTimer(){
 		if (startGameTimer != null){
+			ServerLog.info(sessionId, "Robot "+nickName+ " clearStartGameTimer");			
 			startGameTimer.cancel();
 			startGameTimer = null;
 		}

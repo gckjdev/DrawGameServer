@@ -146,31 +146,18 @@
 			<version>3.1</version>
 		</dependency>
 		<dependency>
-			<groupId>tencent</groupId>
-			<artifactId>QWeibo</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>sina</groupId>
-			<artifactId>weibo4j</artifactId>
-			<version>20110610</version>
-		</dependency>
-		<dependency>
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
 			<version>1.6.2</version>
 		</dependency>
+		<!-- 
 		<dependency>
 			<groupId>com.chenlb.mmseg4j</groupId>
 			<artifactId>mmseg4j</artifactId>
 			<version>1.8.4</version>
 			<classifier>dic</classifier>
 		</dependency>
-		<dependency>
-			<groupId>com.taobao.api</groupId>
-			<artifactId>taobao-sdk-java-online_standard</artifactId>
-			<version>20110914</version>
-		</dependency>
+		 -->
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>

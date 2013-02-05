@@ -36,6 +36,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 
 	final Action completeGame = new DrawGameAction.CompleteGame();
 	final Action playGame = new DrawGameAction.PlayGame();
+	final Action clearPlayGame = new DrawGameAction.ClearPlayGame();
 	final Action calculateDrawUserCoins = new DrawGameAction.CalculateDrawUserCoins();	
 	final Action setOneUserWaitTimer = new DrawGameAction.SetOneUserWaitTimer();
 	
@@ -89,6 +90,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 		sm.addState(new GameState(GameStateKey.ONE_USER_WAITING))
 			.addAction(setOneUserWaitTimer)
 			.addAction(prepareRobot)
+			.addAction(clearPlayGame)					
 			.addTransition(GameCommandType.LOCAL_NEW_USER_JOIN, GameStateKey.CHECK_USER_COUNT)
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.CREATE)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.CREATE)	
@@ -174,6 +176,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
 			.addEmptyTransition(GameCommandType.LOCAL_DRAW_USER_CHAT)
 			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.COMPLETE_GAME)				
+			.addAction(clearPlayGame)		
 			.addAction(clearTimer);
 		
 		sm.addState(new GameState(GameStateKey.COMPLETE_GAME))

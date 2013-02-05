@@ -21,7 +21,7 @@ import com.orange.game.traffic.service.GameDBService;
 public class DrawStorageService {
 
 	
-	protected static final int MIN_DRAW_DATA_LEN = 5000;
+	protected static final int MIN_DRAW_DATA_LEN = 50000;
 	protected static final int EXECUTOR_POOL_NUM = 5;
 
 	CopyOnWriteArrayList<ExecutorService> executorList = new CopyOnWriteArrayList<ExecutorService>();
@@ -159,6 +159,10 @@ public class DrawStorageService {
 	public void storeGuessWord(final int sessionId, final String word, final int language,
 			final Collection<String> collection) {
 		
+		// disable this feature, set by Benson, we have enough data
+		return;
+		
+		/*
     	ExecutorService executor = getExecutor(sessionId);
 		
 		executor.execute(new Runnable(){
@@ -199,6 +203,7 @@ public class DrawStorageService {
 			}
     	
     	});
+    	*/
 		
 	}
 	

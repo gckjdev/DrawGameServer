@@ -199,4 +199,24 @@ public class DrawGameSession extends GameSession {
 		
 		return this.isAllUserGuessWord(userIdList);
 	}
+
+	volatile boolean isDrawGuessing = false;
+	
+	public void setDrawGuessing() {
+		isDrawGuessing = true;
+	}
+	
+	public void clearDrawGuessing() {
+		isDrawGuessing = false;
+	}
+	
+	public boolean isDrawGuessing() {
+		return isDrawGuessing;
+	}
+
+	@Override
+	public boolean canAllocate() {
+		return (isDrawGuessing == false);  // if it's in draw & guess status, cannot allocate this session
+	}
+	
 }

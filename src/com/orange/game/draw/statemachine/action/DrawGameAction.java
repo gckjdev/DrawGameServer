@@ -18,6 +18,16 @@ import com.orange.network.game.protocol.message.GameMessageProtos;
 
 public class DrawGameAction{
 
+	public static class ClearPlayGame  implements Action {
+
+		@Override
+		public void execute(Object context) {
+			DrawGameSession session = (DrawGameSession)context;
+			session.clearDrawGuessing();
+		}
+
+	}
+
 	public static class FireStartGame implements Action {
 
 			public static void fireGameStartNotification(GameSession gameSession) {
@@ -177,19 +187,12 @@ public class DrawGameAction{
 		}
 	}	
 
-
-	
-
-
-
-
 	public static class PlayGame implements Action {
 
 		@Override
 		public void execute(Object context) {
-			GameSession session = (GameSession)context;
-			
-			// TODO think about it
+			DrawGameSession session = (DrawGameSession)context;
+			session.setDrawGuessing();
 		}
 
 	}
