@@ -202,20 +202,16 @@ public class DrawGameSession extends GameSession {
 
 	volatile boolean isDrawGuessing = false;
 	
-	public void setDrawGuessing() {
+	public synchronized void setDrawGuessing() {
 		isDrawGuessing = true;
 	}
 	
-	public void clearDrawGuessing() {
+	public synchronized void clearDrawGuessing() {
 		isDrawGuessing = false;
 	}
 	
-	public boolean isDrawGuessing() {
-		return isDrawGuessing;
-	}
-
 	@Override
-	public boolean canAllocate() {
+	public synchronized boolean canAllocate() {
 		return (isDrawGuessing == false);  // if it's in draw & guess status, cannot allocate this session
 	}
 	

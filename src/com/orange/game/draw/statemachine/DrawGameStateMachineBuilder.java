@@ -66,6 +66,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addAction(broadcastDrawUserChange);
 		
 		sm.addState(new GameState(GameStateKey.CHECK_USER_COUNT))
+			.addAction(clearPlayGame)							
 			.setDecisionPoint(new DecisionPoint(checkUserCount){
 				@Override
 				public Object decideNextState(Object context){
@@ -100,7 +101,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addAction(clearRobotTimer);
 		
 		sm.addState(new GameState(GameStateKey.WAIT_FOR_START_GAME))
-//			.addAction(setAllUserPlaying)
+			.addAction(setAllUserPlaying)		
 			.addAction(setStartGameTimer)
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.DRAW_USER_QUIT)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.CHECK_USER_COUNT)	
@@ -112,9 +113,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addAction(clearTimer);
 				
 		sm.addState(new GameState(GameStateKey.DRAW_USER_QUIT))	
-//			.addAction(setAllUserPlaying)
 			.addAction(selectPlayUser)
-//			.addAction(clearAllUserPlaying)
 			.addAction(broadcastDrawUserChange)			
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
@@ -124,7 +123,6 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			});	
 		
 		sm.addState(new GameState(GameStateKey.KICK_DRAW_USER))
-//			.addAction(setAllUserPlaying)
 			.addAction(kickPlayUser)
 			.addAction(selectPlayUser)
 			.addAction(broadcastDrawUserChange)
@@ -147,6 +145,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 		
 		sm.addState(new GameState(GameStateKey.FIRE_START_GAME))
 //			.addAction(setAllUserPlaying)
+			.addAction(playGame)				
 			.addAction(fireStartGame)
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
@@ -164,12 +163,12 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.COMPLETE_GAME)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
+			.addEmptyTransition(GameCommandType.LOCAL_NEW_USER_JOIN)			
 			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.KICK_DRAW_USER)	
 			.addAction(clearTimer);
 		
 		sm.addState(new GameState(GameStateKey.DRAW_GUESS))
 			.addAction(setDrawGuessTimer)
-			.addAction(playGame)		
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.COMPLETE_GAME)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
 			.addTransition(GameCommandType.LOCAL_ALL_USER_GUESS, GameStateKey.COMPLETE_GAME)
@@ -180,6 +179,8 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addAction(clearTimer);
 		
 		sm.addState(new GameState(GameStateKey.COMPLETE_GAME))
+			.addAction(clearPlayGame)				
+			.addAction(setAllUserPlaying)					
 			.addAction(calculateDrawUserCoins)
 			.addAction(selectPlayUser)
 			.addAction(completeGame)
