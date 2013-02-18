@@ -1,10 +1,14 @@
 package com.orange.game.draw.model;
 
+import org.eclipse.jetty.util.log.Log;
+
 import com.orange.game.constants.DBConstants;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
 import com.orange.game.traffic.model.manager.GameSessionManager;
+import com.orange.game.traffic.server.GameEventExecutor;
 import com.orange.network.game.protocol.constants.GameConstantsProtos.DiceGameRuleType;
+import com.orange.network.game.protocol.constants.GameConstantsProtos.GameCommandType;
 
 public class DrawGameSessionManager extends GameSessionManager {
 
@@ -60,6 +64,17 @@ public class DrawGameSessionManager extends GameSessionManager {
 	@Override
 	public int getMaxPlayerCount() {
 		return readMaxPlayerCount(MAX_PLAYER_PER_SESSION);
+	}
+
+	@Override
+	public void postActionForUserQuitSession(GameSession session,
+			GameUser quitUser) {
+		String userId = quitUser.getUserId();
+		DrawGameSession drawSession = (DrawGameSession)session;
+		if (drawSession.isAllUserGuessWordWhenUserQuit(userId)){
+			logger.info("<postActionForUserQuitSession> user "+quitUser.getNickName()+" quit, and all other user has guessed the word!");
+			GameEventExecutor.getInstance().fireAndDispatchEvent(GameCommandType.LOCAL_ALL_USER_GUESS, session.getSessionId(), userId);
+		}
 	}
 	
 }

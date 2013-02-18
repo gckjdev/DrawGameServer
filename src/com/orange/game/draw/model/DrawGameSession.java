@@ -3,6 +3,7 @@ package com.orange.game.draw.model;
 import java.util.ArrayList;
 import java.util.List;
 import com.orange.common.log.ServerLog;
+import com.orange.common.utils.StringUtil;
 import com.orange.game.draw.statemachine.DrawGameStateMachineBuilder;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
@@ -213,6 +214,22 @@ public class DrawGameSession extends GameSession {
 	@Override
 	public synchronized boolean canAllocate() {
 		return (isDrawGuessing == false);  // if it's in draw & guess status, cannot allocate this session
+	}
+
+
+	public boolean isAllUserGuessWordWhenUserQuit(String userId) {
+		if (currentTurn == null)
+			return false;
+		
+		List<String> userIdList = new ArrayList<String>();
+		List<GameUser> userList = getUserList().getPlayingUserList();
+		for (GameUser user : userList){
+			if (user.isPlaying() && user != this.getCurrentPlayUser() && (userId != null && !userId.equals(user.getUserId()))){
+				userIdList.add(user.getUserId());
+			}
+		}
+
+		return currentTurn.isAllUserGuessWord(userIdList);
 	}
 	
 }

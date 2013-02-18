@@ -5,6 +5,7 @@ import com.orange.common.statemachine.Condition;
 import com.orange.common.statemachine.DecisionPoint;
 import com.orange.common.statemachine.State;
 import com.orange.common.statemachine.StateMachine;
+import com.orange.game.draw.model.DrawGameSession;
 import com.orange.game.draw.statemachine.action.DrawGameAction;
 import com.orange.game.draw.statemachine.state.GameState;
 import com.orange.game.draw.statemachine.state.GameStateKey;
@@ -28,12 +29,11 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
     	return builder; 
     } 
     	
-	static final int PICK_WORD_TIMEOUT = 60;
-	static final int START_GAME_TIMEOUT = 36;			// 36 seconds, 20 for start, 10 for result, 6 for reserved
+	static final int PICK_WORD_TIMEOUT = 13;
+	static final int START_GAME_TIMEOUT = 33;			// 33 seconds, 20 for start, 10 for result, 3 for reserved
 	static final int USER_WAIT_TIMEOUT = 60*30;		// 30 minutes
 	static final int DRAW_GUESS_TIMEOUT = 60;
 	
-
 	final Action completeGame = new DrawGameAction.CompleteGame();
 	final Action playGame = new DrawGameAction.PlayGame();
 	final Action clearPlayGame = new DrawGameAction.ClearPlayGame();
@@ -59,7 +59,8 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addEmptyTransition(GameCommandType.LOCAL_PLAY_USER_QUIT)			
 			.addEmptyTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT)			
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)			
-			.addEmptyTransition(GameCommandType.LOCAL_TIME_OUT)			
+			.addEmptyTransition(GameCommandType.LOCAL_TIME_OUT)		
+			.addEmptyTransition(GameCommandType.LOCAL_ALL_USER_GUESS)		
 			.addTransition(GameCommandType.LOCAL_NEW_USER_JOIN, GameStateKey.CHECK_USER_COUNT)
 			.addAction(setAllUserPlaying)
 			.addAction(selectPlayUser)
@@ -107,9 +108,9 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.CHECK_USER_COUNT)	
 			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
 			.addEmptyTransition(GameCommandType.LOCAL_NEW_USER_JOIN)
+			.addEmptyTransition(GameCommandType.LOCAL_DRAW_USER_CHAT)
 			.addTransition(GameCommandType.LOCAL_START_GAME, GameStateKey.FIRE_START_GAME)
-			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.START_GAME_TIMEOUT)	
-			.addTransition(GameCommandType.LOCAL_DRAW_USER_CHAT, GameStateKey.WAIT_FOR_START_GAME)	
+			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.START_GAME_TIMEOUT)		
 			.addAction(clearTimer);
 				
 		sm.addState(new GameState(GameStateKey.DRAW_USER_QUIT))	
@@ -129,7 +130,7 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.setDecisionPoint(new DecisionPoint(null){
 				@Override
 				public Object decideNextState(Object context){
-					return GameStateKey.CHECK_USER_COUNT;	// goto check user count state directly
+					return GameStateKey.COMPLETE_GAME;	// complete game here
 				}
 			});
 		
@@ -172,11 +173,22 @@ public class DrawGameStateMachineBuilder extends CommonStateMachineBuilder {
 			.addTransition(GameCommandType.LOCAL_PLAY_USER_QUIT, GameStateKey.COMPLETE_GAME)
 			.addTransition(GameCommandType.LOCAL_ALL_OTHER_USER_QUIT, GameStateKey.COMPLETE_GAME)	
 			.addTransition(GameCommandType.LOCAL_ALL_USER_GUESS, GameStateKey.COMPLETE_GAME)
-			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT)
+			.addEmptyTransition(GameCommandType.LOCAL_OTHER_USER_QUIT) // GameStateKey.CHECK_IS_ALL_USER_GUESSED)
 			.addEmptyTransition(GameCommandType.LOCAL_DRAW_USER_CHAT)
 			.addTransition(GameCommandType.LOCAL_TIME_OUT, GameStateKey.COMPLETE_GAME)				
 			.addAction(clearPlayGame)		
 			.addAction(clearTimer);
+		
+		/*
+		sm.addState(new GameState(GameStateKey.CHECK_IS_ALL_USER_GUESSED))
+			.setDecisionPoint(new DecisionPoint(null){
+				@Override
+				public Object decideNextState(Object context){
+					DrawGameSession session = (DrawGameSession)context;					
+					return GameStateKey.WAIT_PICK_WORD;	// goto check user count state directly
+				}
+			});		
+		*/
 		
 		sm.addState(new GameState(GameStateKey.COMPLETE_GAME))
 			.addAction(clearPlayGame)				
