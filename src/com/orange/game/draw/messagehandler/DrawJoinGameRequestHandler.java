@@ -126,6 +126,8 @@ public class DrawJoinGameRequestHandler extends JoinGameRequestHandler {
 		GameUser user = SessionUserService.getInstance().addUserIntoSession(session, pbUser, channel, request);
 		
 		// for draw guess game, all user is in playing state by default
+		logger.info("set user "+user.getNickName()+" interface version to "+joinRequest.getVersion());
+		user.setInterfaceVersion(joinRequest.getVersion());
 		user.setPlaying(true);
 		
 		// send response

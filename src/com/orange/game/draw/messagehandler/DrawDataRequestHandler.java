@@ -3,6 +3,7 @@ package com.orange.game.draw.messagehandler;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.MessageEvent;
 
+import com.orange.common.log.ServerLog;
 import com.orange.game.draw.model.DrawGameSession;
 import com.orange.game.traffic.messagehandler.AbstractMessageHandler;
 import com.orange.game.traffic.model.dao.GameSession;
@@ -14,6 +15,7 @@ import com.orange.network.game.protocol.constants.GameConstantsProtos.GameComple
 import com.orange.network.game.protocol.message.GameMessageProtos;
 import com.orange.network.game.protocol.message.GameMessageProtos.GameMessage;
 import com.orange.network.game.protocol.message.GameMessageProtos.SendDrawDataRequest;
+import com.orange.network.game.protocol.model.GameBasicProtos.PBSize;
 
 public class DrawDataRequestHandler extends AbstractMessageHandler {
 
@@ -33,6 +35,18 @@ public class DrawDataRequestHandler extends AbstractMessageHandler {
 		
 		SendDrawDataRequest drawRequest = message.getSendDrawDataRequest();
 		if (drawRequest == null){
+			return;
+		}
+		
+		if (drawRequest.hasCanvasSize() || drawRequest.hasDrawAction()){
+			
+			if (drawRequest.hasCanvasSize() && drawRequest.getCanvasSize() != null){
+				session.setCanvasSize(drawRequest.getCanvasSize());
+			}
+			
+			// forward draw request 
+			ServerLog.info(gameSession.getSessionId(), "receive new draw action/canvas, broadcast directly");
+			NotificationUtils.broadcastSendDrawDataRequest(gameSession, message.getUserId(), message, session.getCanvasSize());		
 			return;
 		}
 
@@ -93,9 +107,10 @@ public class DrawDataRequestHandler extends AbstractMessageHandler {
 			.setGuessCorrect(guessCorrect)
 			.setGuessGainCoins(guessGainCoins)
 			.build();		
-		
+				
 		// broast draw data to all other users in the session
-		NotificationUtils.broadcastDrawDataNotification(session, message.getUserId(), guessCorrect, notification);			
+		PBSize canvasSize = session.getCanvasSize();
+		NotificationUtils.broadcastDrawDataNotification(session, message.getUserId(), guessCorrect, notification, canvasSize);			
 		
 		// fire pick word local message
 		// drive state machine running

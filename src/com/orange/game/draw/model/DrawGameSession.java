@@ -5,9 +5,11 @@ import java.util.List;
 import com.orange.common.log.ServerLog;
 import com.orange.common.utils.StringUtil;
 import com.orange.game.draw.statemachine.DrawGameStateMachineBuilder;
+import com.orange.game.model.service.DataService;
 import com.orange.game.traffic.model.dao.GameSession;
 import com.orange.game.traffic.model.dao.GameUser;
 import com.orange.network.game.protocol.constants.GameConstantsProtos.GameCompleteReason;
+import com.orange.network.game.protocol.model.GameBasicProtos.PBSize;
 
 
 public class DrawGameSession extends GameSession {
@@ -153,6 +155,9 @@ public class DrawGameSession extends GameSession {
 	}
 
 	public void completeTurn() {
+		
+		this.canvasSize = null;
+		
 		if (this.currentTurn == null)
 			return;
 		
@@ -176,17 +181,24 @@ public class DrawGameSession extends GameSession {
 	}
 
 	public void appendDrawData(List<Integer> pointsList, int color, float width) {
-		if (currentTurn == null)
-			return;
-
-		currentTurn.appendDrawData(pointsList, color, width);
+		
+		// add by Benson 2013-04-02, don't store draw data any more
+		return;
+		
+//		if (currentTurn == null)
+//			return;
+//
+//		currentTurn.appendDrawData(pointsList, color, width);
 	}
 
 	public void appendCleanDrawAction() {
-		if (currentTurn == null)
-			return;
 		
-		currentTurn.appendCleanDrawAction();
+		return;
+		
+//		if (currentTurn == null)
+//			return;
+//		
+//		currentTurn.appendCleanDrawAction();
 	}
 	
 	public boolean isAllUserGuessWord(){
@@ -231,5 +243,35 @@ public class DrawGameSession extends GameSession {
 
 		return currentTurn.isAllUserGuessWord(userIdList);
 	}
+
+	PBSize canvasSize = null;
+	
+	public void setCanvasSize(PBSize canvasSize) {
+		this.canvasSize = canvasSize;
+	}
+	
+	public float getCanvasWidth(){
+		if (canvasSize != null)
+			return canvasSize.getWidth();
+		return DataService.DRAW_VERSION_1_WIDTH;
+	}
+	
+	public float getCanvasHeight(){
+		if (canvasSize != null)
+			return canvasSize.getHeight();
+		return DataService.DRAW_VERSION_1_HEIGHT;
+	}
+
+
+	public PBSize getCanvasSize() {
+		if (this.canvasSize != null)
+			return this.canvasSize;
+		else
+			return PBSize.newBuilder()
+					.setWidth(DataService.DRAW_VERSION_1_WIDTH)
+					.setHeight(DataService.DRAW_VERSION_1_HEIGHT)
+					.build();
+	}
+	
 	
 }
